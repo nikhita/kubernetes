@@ -14,25 +14,20 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package authorization
+package v1alpha1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/client-go/pkg/api"
+	"k8s.io/client-go/pkg/api/v1"
 )
 
 // GroupName is the group name use in this package
-const GroupName = "authorization.k8s.io"
+const GroupName = "policy"
 
 // SchemeGroupVersion is group version used to register these objects
-var SchemeGroupVersion = schema.GroupVersion{Group: GroupName, Version: runtime.APIVersionInternal}
-
-// Kind takes an unqualified kind and returns a Group qualified GroupKind
-func Kind(kind string) schema.GroupKind {
-	return SchemeGroupVersion.WithKind(kind).GroupKind()
-}
+var SchemeGroupVersion = schema.GroupVersion{Group: GroupName, Version: "v1alpha1"}
 
 // Resource takes an unqualified resource and returns a Group qualified GroupResource
 func Resource(resource string) schema.GroupResource {
@@ -44,15 +39,17 @@ var (
 	AddToScheme   = SchemeBuilder.AddToScheme
 )
 
+// Adds the list of known types to api.Scheme.
 func addKnownTypes(scheme *runtime.Scheme) error {
 	scheme.AddKnownTypes(SchemeGroupVersion,
-		&api.DeleteOptions{},
+		&PodDisruptionBudget{},
+		&PodDisruptionBudgetList{},
+		&Eviction{},
+		&v1.DeleteOptions{},
 		&metav1.ExportOptions{},
 		&metav1.GetOptions{},
-
-		&SelfSubjectAccessReview{},
-		&SubjectAccessReview{},
-		&LocalSubjectAccessReview{},
 	)
+	// Add the watch version that applies
+	metav1.AddToGroupVersion(scheme, SchemeGroupVersion)
 	return nil
 }
