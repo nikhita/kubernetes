@@ -35,8 +35,14 @@ func RegisterDefaults(scheme *runtime.Scheme) error {
 
 func SetObjectDefaults_MasterConfiguration(in *MasterConfiguration) {
 	SetDefaults_MasterConfiguration(in)
+	for i := range in.Etcd.Endpoints {
+		a := &in.Etcd.Endpoints[i]
+	}
 }
 
 func SetObjectDefaults_NodeConfiguration(in *NodeConfiguration) {
 	SetDefaults_NodeConfiguration(in)
+	for i := range in.DiscoveryTokenAPIServers {
+		a := &in.DiscoveryTokenAPIServers[i]
+	}
 }

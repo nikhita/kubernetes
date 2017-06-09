@@ -34,4 +34,10 @@ func RegisterDefaults(scheme *runtime.Scheme) error {
 
 func SetObjectDefaults_Configuration(in *Configuration) {
 	SetDefaults_Configuration(in)
+	for i := range in.LimitedResources {
+		a := &in.LimitedResources[i]
+		for j := range a.MatchContains {
+			b := &a.MatchContains[j]
+		}
+	}
 }

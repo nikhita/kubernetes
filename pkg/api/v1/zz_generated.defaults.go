@@ -28,16 +28,25 @@ import (
 // Public to allow building arbitrary schemes.
 // All generated defaulters are covering - they call all nested defaulters.
 func RegisterDefaults(scheme *runtime.Scheme) error {
+	scheme.AddTypeDefaultingFunc(&Binding{}, func(obj interface{}) { SetObjectDefaults_Binding(obj.(*Binding)) })
+	scheme.AddTypeDefaultingFunc(&ComponentStatus{}, func(obj interface{}) { SetObjectDefaults_ComponentStatus(obj.(*ComponentStatus)) })
+	scheme.AddTypeDefaultingFunc(&ComponentStatusList{}, func(obj interface{}) { SetObjectDefaults_ComponentStatusList(obj.(*ComponentStatusList)) })
 	scheme.AddTypeDefaultingFunc(&ConfigMap{}, func(obj interface{}) { SetObjectDefaults_ConfigMap(obj.(*ConfigMap)) })
 	scheme.AddTypeDefaultingFunc(&ConfigMapList{}, func(obj interface{}) { SetObjectDefaults_ConfigMapList(obj.(*ConfigMapList)) })
+	scheme.AddTypeDefaultingFunc(&DeleteOptions{}, func(obj interface{}) { SetObjectDefaults_DeleteOptions(obj.(*DeleteOptions)) })
 	scheme.AddTypeDefaultingFunc(&Endpoints{}, func(obj interface{}) { SetObjectDefaults_Endpoints(obj.(*Endpoints)) })
 	scheme.AddTypeDefaultingFunc(&EndpointsList{}, func(obj interface{}) { SetObjectDefaults_EndpointsList(obj.(*EndpointsList)) })
+	scheme.AddTypeDefaultingFunc(&Event{}, func(obj interface{}) { SetObjectDefaults_Event(obj.(*Event)) })
+	scheme.AddTypeDefaultingFunc(&EventList{}, func(obj interface{}) { SetObjectDefaults_EventList(obj.(*EventList)) })
 	scheme.AddTypeDefaultingFunc(&LimitRange{}, func(obj interface{}) { SetObjectDefaults_LimitRange(obj.(*LimitRange)) })
 	scheme.AddTypeDefaultingFunc(&LimitRangeList{}, func(obj interface{}) { SetObjectDefaults_LimitRangeList(obj.(*LimitRangeList)) })
+	scheme.AddTypeDefaultingFunc(&List{}, func(obj interface{}) { SetObjectDefaults_List(obj.(*List)) })
+	scheme.AddTypeDefaultingFunc(&ListOptions{}, func(obj interface{}) { SetObjectDefaults_ListOptions(obj.(*ListOptions)) })
 	scheme.AddTypeDefaultingFunc(&Namespace{}, func(obj interface{}) { SetObjectDefaults_Namespace(obj.(*Namespace)) })
 	scheme.AddTypeDefaultingFunc(&NamespaceList{}, func(obj interface{}) { SetObjectDefaults_NamespaceList(obj.(*NamespaceList)) })
 	scheme.AddTypeDefaultingFunc(&Node{}, func(obj interface{}) { SetObjectDefaults_Node(obj.(*Node)) })
 	scheme.AddTypeDefaultingFunc(&NodeList{}, func(obj interface{}) { SetObjectDefaults_NodeList(obj.(*NodeList)) })
+	scheme.AddTypeDefaultingFunc(&NodeProxyOptions{}, func(obj interface{}) { SetObjectDefaults_NodeProxyOptions(obj.(*NodeProxyOptions)) })
 	scheme.AddTypeDefaultingFunc(&PersistentVolume{}, func(obj interface{}) { SetObjectDefaults_PersistentVolume(obj.(*PersistentVolume)) })
 	scheme.AddTypeDefaultingFunc(&PersistentVolumeClaim{}, func(obj interface{}) { SetObjectDefaults_PersistentVolumeClaim(obj.(*PersistentVolumeClaim)) })
 	scheme.AddTypeDefaultingFunc(&PersistentVolumeClaimList{}, func(obj interface{}) { SetObjectDefaults_PersistentVolumeClaimList(obj.(*PersistentVolumeClaimList)) })
@@ -46,21 +55,148 @@ func RegisterDefaults(scheme *runtime.Scheme) error {
 	scheme.AddTypeDefaultingFunc(&PodAttachOptions{}, func(obj interface{}) { SetObjectDefaults_PodAttachOptions(obj.(*PodAttachOptions)) })
 	scheme.AddTypeDefaultingFunc(&PodExecOptions{}, func(obj interface{}) { SetObjectDefaults_PodExecOptions(obj.(*PodExecOptions)) })
 	scheme.AddTypeDefaultingFunc(&PodList{}, func(obj interface{}) { SetObjectDefaults_PodList(obj.(*PodList)) })
+	scheme.AddTypeDefaultingFunc(&PodLogOptions{}, func(obj interface{}) { SetObjectDefaults_PodLogOptions(obj.(*PodLogOptions)) })
+	scheme.AddTypeDefaultingFunc(&PodPortForwardOptions{}, func(obj interface{}) { SetObjectDefaults_PodPortForwardOptions(obj.(*PodPortForwardOptions)) })
+	scheme.AddTypeDefaultingFunc(&PodProxyOptions{}, func(obj interface{}) { SetObjectDefaults_PodProxyOptions(obj.(*PodProxyOptions)) })
+	scheme.AddTypeDefaultingFunc(&PodStatusResult{}, func(obj interface{}) { SetObjectDefaults_PodStatusResult(obj.(*PodStatusResult)) })
 	scheme.AddTypeDefaultingFunc(&PodTemplate{}, func(obj interface{}) { SetObjectDefaults_PodTemplate(obj.(*PodTemplate)) })
 	scheme.AddTypeDefaultingFunc(&PodTemplateList{}, func(obj interface{}) { SetObjectDefaults_PodTemplateList(obj.(*PodTemplateList)) })
+	scheme.AddTypeDefaultingFunc(&RangeAllocation{}, func(obj interface{}) { SetObjectDefaults_RangeAllocation(obj.(*RangeAllocation)) })
 	scheme.AddTypeDefaultingFunc(&ReplicationController{}, func(obj interface{}) { SetObjectDefaults_ReplicationController(obj.(*ReplicationController)) })
 	scheme.AddTypeDefaultingFunc(&ReplicationControllerList{}, func(obj interface{}) { SetObjectDefaults_ReplicationControllerList(obj.(*ReplicationControllerList)) })
 	scheme.AddTypeDefaultingFunc(&ResourceQuota{}, func(obj interface{}) { SetObjectDefaults_ResourceQuota(obj.(*ResourceQuota)) })
 	scheme.AddTypeDefaultingFunc(&ResourceQuotaList{}, func(obj interface{}) { SetObjectDefaults_ResourceQuotaList(obj.(*ResourceQuotaList)) })
 	scheme.AddTypeDefaultingFunc(&Secret{}, func(obj interface{}) { SetObjectDefaults_Secret(obj.(*Secret)) })
 	scheme.AddTypeDefaultingFunc(&SecretList{}, func(obj interface{}) { SetObjectDefaults_SecretList(obj.(*SecretList)) })
+	scheme.AddTypeDefaultingFunc(&SerializedReference{}, func(obj interface{}) { SetObjectDefaults_SerializedReference(obj.(*SerializedReference)) })
 	scheme.AddTypeDefaultingFunc(&Service{}, func(obj interface{}) { SetObjectDefaults_Service(obj.(*Service)) })
+	scheme.AddTypeDefaultingFunc(&ServiceAccount{}, func(obj interface{}) { SetObjectDefaults_ServiceAccount(obj.(*ServiceAccount)) })
+	scheme.AddTypeDefaultingFunc(&ServiceAccountList{}, func(obj interface{}) { SetObjectDefaults_ServiceAccountList(obj.(*ServiceAccountList)) })
 	scheme.AddTypeDefaultingFunc(&ServiceList{}, func(obj interface{}) { SetObjectDefaults_ServiceList(obj.(*ServiceList)) })
+	scheme.AddTypeDefaultingFunc(&ServiceProxyOptions{}, func(obj interface{}) { SetObjectDefaults_ServiceProxyOptions(obj.(*ServiceProxyOptions)) })
 	return nil
+}
+
+func SetObjectDefaults_Binding(in *Binding) {
+	if in.ObjectMeta.CreationTimestamp.Time.loc != nil {
+		for i := range in.ObjectMeta.CreationTimestamp.Time.loc.zone {
+			a := &in.ObjectMeta.CreationTimestamp.Time.loc.zone[i]
+		}
+		for i := range in.ObjectMeta.CreationTimestamp.Time.loc.tx {
+			a := &in.ObjectMeta.CreationTimestamp.Time.loc.tx[i]
+		}
+		if in.ObjectMeta.CreationTimestamp.Time.loc.cacheZone != nil {
+		}
+	}
+	if in.ObjectMeta.DeletionTimestamp != nil {
+	}
+	if in.ObjectMeta.DeletionGracePeriodSeconds != nil {
+	}
+	for i := range in.ObjectMeta.OwnerReferences {
+		a := &in.ObjectMeta.OwnerReferences[i]
+		if a.Controller != nil {
+		}
+	}
+	if in.ObjectMeta.Initializers != nil {
+		for i := range in.ObjectMeta.Initializers.Pending {
+			a := &in.ObjectMeta.Initializers.Pending[i]
+		}
+		if in.ObjectMeta.Initializers.Result != nil {
+			if in.ObjectMeta.Initializers.Result.Details != nil {
+				for i := range in.ObjectMeta.Initializers.Result.Details.Causes {
+					a := &in.ObjectMeta.Initializers.Result.Details.Causes[i]
+				}
+			}
+		}
+	}
+	for i := range in.ObjectMeta.Finalizers {
+		a := &in.ObjectMeta.Finalizers[i]
+	}
+}
+
+func SetObjectDefaults_ComponentStatus(in *ComponentStatus) {
+	if in.ObjectMeta.CreationTimestamp.Time.loc != nil {
+		for i := range in.ObjectMeta.CreationTimestamp.Time.loc.zone {
+			a := &in.ObjectMeta.CreationTimestamp.Time.loc.zone[i]
+		}
+		for i := range in.ObjectMeta.CreationTimestamp.Time.loc.tx {
+			a := &in.ObjectMeta.CreationTimestamp.Time.loc.tx[i]
+		}
+		if in.ObjectMeta.CreationTimestamp.Time.loc.cacheZone != nil {
+		}
+	}
+	if in.ObjectMeta.DeletionTimestamp != nil {
+	}
+	if in.ObjectMeta.DeletionGracePeriodSeconds != nil {
+	}
+	for i := range in.ObjectMeta.OwnerReferences {
+		a := &in.ObjectMeta.OwnerReferences[i]
+		if a.Controller != nil {
+		}
+	}
+	if in.ObjectMeta.Initializers != nil {
+		for i := range in.ObjectMeta.Initializers.Pending {
+			a := &in.ObjectMeta.Initializers.Pending[i]
+		}
+		if in.ObjectMeta.Initializers.Result != nil {
+			if in.ObjectMeta.Initializers.Result.Details != nil {
+				for i := range in.ObjectMeta.Initializers.Result.Details.Causes {
+					a := &in.ObjectMeta.Initializers.Result.Details.Causes[i]
+				}
+			}
+		}
+	}
+	for i := range in.ObjectMeta.Finalizers {
+		a := &in.ObjectMeta.Finalizers[i]
+	}
+	for i := range in.Conditions {
+		a := &in.Conditions[i]
+	}
+}
+
+func SetObjectDefaults_ComponentStatusList(in *ComponentStatusList) {
+	for i := range in.Items {
+		a := &in.Items[i]
+		SetObjectDefaults_ComponentStatus(a)
+	}
 }
 
 func SetObjectDefaults_ConfigMap(in *ConfigMap) {
 	SetDefaults_ConfigMap(in)
+	if in.ObjectMeta.CreationTimestamp.Time.loc != nil {
+		for i := range in.ObjectMeta.CreationTimestamp.Time.loc.zone {
+			a := &in.ObjectMeta.CreationTimestamp.Time.loc.zone[i]
+		}
+		for i := range in.ObjectMeta.CreationTimestamp.Time.loc.tx {
+			a := &in.ObjectMeta.CreationTimestamp.Time.loc.tx[i]
+		}
+		if in.ObjectMeta.CreationTimestamp.Time.loc.cacheZone != nil {
+		}
+	}
+	if in.ObjectMeta.DeletionTimestamp != nil {
+	}
+	if in.ObjectMeta.DeletionGracePeriodSeconds != nil {
+	}
+	for i := range in.ObjectMeta.OwnerReferences {
+		a := &in.ObjectMeta.OwnerReferences[i]
+		if a.Controller != nil {
+		}
+	}
+	if in.ObjectMeta.Initializers != nil {
+		for i := range in.ObjectMeta.Initializers.Pending {
+			a := &in.ObjectMeta.Initializers.Pending[i]
+		}
+		if in.ObjectMeta.Initializers.Result != nil {
+			if in.ObjectMeta.Initializers.Result.Details != nil {
+				for i := range in.ObjectMeta.Initializers.Result.Details.Causes {
+					a := &in.ObjectMeta.Initializers.Result.Details.Causes[i]
+				}
+			}
+		}
+	}
+	for i := range in.ObjectMeta.Finalizers {
+		a := &in.ObjectMeta.Finalizers[i]
+	}
 }
 
 func SetObjectDefaults_ConfigMapList(in *ConfigMapList) {
@@ -70,8 +206,64 @@ func SetObjectDefaults_ConfigMapList(in *ConfigMapList) {
 	}
 }
 
+func SetObjectDefaults_DeleteOptions(in *DeleteOptions) {
+	if in.Preconditions != nil {
+		if in.Preconditions.UID != nil {
+		}
+	}
+	if in.PropagationPolicy != nil {
+	}
+}
+
 func SetObjectDefaults_Endpoints(in *Endpoints) {
 	SetDefaults_Endpoints(in)
+	if in.ObjectMeta.CreationTimestamp.Time.loc != nil {
+		for i := range in.ObjectMeta.CreationTimestamp.Time.loc.zone {
+			a := &in.ObjectMeta.CreationTimestamp.Time.loc.zone[i]
+		}
+		for i := range in.ObjectMeta.CreationTimestamp.Time.loc.tx {
+			a := &in.ObjectMeta.CreationTimestamp.Time.loc.tx[i]
+		}
+		if in.ObjectMeta.CreationTimestamp.Time.loc.cacheZone != nil {
+		}
+	}
+	if in.ObjectMeta.DeletionTimestamp != nil {
+	}
+	if in.ObjectMeta.DeletionGracePeriodSeconds != nil {
+	}
+	for i := range in.ObjectMeta.OwnerReferences {
+		a := &in.ObjectMeta.OwnerReferences[i]
+		if a.Controller != nil {
+		}
+	}
+	if in.ObjectMeta.Initializers != nil {
+		for i := range in.ObjectMeta.Initializers.Pending {
+			a := &in.ObjectMeta.Initializers.Pending[i]
+		}
+		if in.ObjectMeta.Initializers.Result != nil {
+			if in.ObjectMeta.Initializers.Result.Details != nil {
+				for i := range in.ObjectMeta.Initializers.Result.Details.Causes {
+					a := &in.ObjectMeta.Initializers.Result.Details.Causes[i]
+				}
+			}
+		}
+	}
+	for i := range in.ObjectMeta.Finalizers {
+		a := &in.ObjectMeta.Finalizers[i]
+	}
+	for i := range in.Subsets {
+		a := &in.Subsets[i]
+		for j := range a.Addresses {
+			b := &a.Addresses[j]
+			if b.NodeName != nil {
+			}
+			if b.TargetRef != nil {
+			}
+		}
+		for j := range a.Ports {
+			b := &a.Ports[j]
+		}
+	}
 }
 
 func SetObjectDefaults_EndpointsList(in *EndpointsList) {
@@ -81,7 +273,85 @@ func SetObjectDefaults_EndpointsList(in *EndpointsList) {
 	}
 }
 
+func SetObjectDefaults_Event(in *Event) {
+	if in.ObjectMeta.CreationTimestamp.Time.loc != nil {
+		for i := range in.ObjectMeta.CreationTimestamp.Time.loc.zone {
+			a := &in.ObjectMeta.CreationTimestamp.Time.loc.zone[i]
+		}
+		for i := range in.ObjectMeta.CreationTimestamp.Time.loc.tx {
+			a := &in.ObjectMeta.CreationTimestamp.Time.loc.tx[i]
+		}
+		if in.ObjectMeta.CreationTimestamp.Time.loc.cacheZone != nil {
+		}
+	}
+	if in.ObjectMeta.DeletionTimestamp != nil {
+	}
+	if in.ObjectMeta.DeletionGracePeriodSeconds != nil {
+	}
+	for i := range in.ObjectMeta.OwnerReferences {
+		a := &in.ObjectMeta.OwnerReferences[i]
+		if a.Controller != nil {
+		}
+	}
+	if in.ObjectMeta.Initializers != nil {
+		for i := range in.ObjectMeta.Initializers.Pending {
+			a := &in.ObjectMeta.Initializers.Pending[i]
+		}
+		if in.ObjectMeta.Initializers.Result != nil {
+			if in.ObjectMeta.Initializers.Result.Details != nil {
+				for i := range in.ObjectMeta.Initializers.Result.Details.Causes {
+					a := &in.ObjectMeta.Initializers.Result.Details.Causes[i]
+				}
+			}
+		}
+	}
+	for i := range in.ObjectMeta.Finalizers {
+		a := &in.ObjectMeta.Finalizers[i]
+	}
+}
+
+func SetObjectDefaults_EventList(in *EventList) {
+	for i := range in.Items {
+		a := &in.Items[i]
+		SetObjectDefaults_Event(a)
+	}
+}
+
 func SetObjectDefaults_LimitRange(in *LimitRange) {
+	if in.ObjectMeta.CreationTimestamp.Time.loc != nil {
+		for i := range in.ObjectMeta.CreationTimestamp.Time.loc.zone {
+			a := &in.ObjectMeta.CreationTimestamp.Time.loc.zone[i]
+		}
+		for i := range in.ObjectMeta.CreationTimestamp.Time.loc.tx {
+			a := &in.ObjectMeta.CreationTimestamp.Time.loc.tx[i]
+		}
+		if in.ObjectMeta.CreationTimestamp.Time.loc.cacheZone != nil {
+		}
+	}
+	if in.ObjectMeta.DeletionTimestamp != nil {
+	}
+	if in.ObjectMeta.DeletionGracePeriodSeconds != nil {
+	}
+	for i := range in.ObjectMeta.OwnerReferences {
+		a := &in.ObjectMeta.OwnerReferences[i]
+		if a.Controller != nil {
+		}
+	}
+	if in.ObjectMeta.Initializers != nil {
+		for i := range in.ObjectMeta.Initializers.Pending {
+			a := &in.ObjectMeta.Initializers.Pending[i]
+		}
+		if in.ObjectMeta.Initializers.Result != nil {
+			if in.ObjectMeta.Initializers.Result.Details != nil {
+				for i := range in.ObjectMeta.Initializers.Result.Details.Causes {
+					a := &in.ObjectMeta.Initializers.Result.Details.Causes[i]
+				}
+			}
+		}
+	}
+	for i := range in.ObjectMeta.Finalizers {
+		a := &in.ObjectMeta.Finalizers[i]
+	}
 	for i := range in.Spec.Limits {
 		a := &in.Spec.Limits[i]
 		SetDefaults_LimitRangeItem(a)
@@ -100,7 +370,50 @@ func SetObjectDefaults_LimitRangeList(in *LimitRangeList) {
 	}
 }
 
+func SetObjectDefaults_List(in *List) {
+}
+
+func SetObjectDefaults_ListOptions(in *ListOptions) {
+}
+
 func SetObjectDefaults_Namespace(in *Namespace) {
+	if in.ObjectMeta.CreationTimestamp.Time.loc != nil {
+		for i := range in.ObjectMeta.CreationTimestamp.Time.loc.zone {
+			a := &in.ObjectMeta.CreationTimestamp.Time.loc.zone[i]
+		}
+		for i := range in.ObjectMeta.CreationTimestamp.Time.loc.tx {
+			a := &in.ObjectMeta.CreationTimestamp.Time.loc.tx[i]
+		}
+		if in.ObjectMeta.CreationTimestamp.Time.loc.cacheZone != nil {
+		}
+	}
+	if in.ObjectMeta.DeletionTimestamp != nil {
+	}
+	if in.ObjectMeta.DeletionGracePeriodSeconds != nil {
+	}
+	for i := range in.ObjectMeta.OwnerReferences {
+		a := &in.ObjectMeta.OwnerReferences[i]
+		if a.Controller != nil {
+		}
+	}
+	if in.ObjectMeta.Initializers != nil {
+		for i := range in.ObjectMeta.Initializers.Pending {
+			a := &in.ObjectMeta.Initializers.Pending[i]
+		}
+		if in.ObjectMeta.Initializers.Result != nil {
+			if in.ObjectMeta.Initializers.Result.Details != nil {
+				for i := range in.ObjectMeta.Initializers.Result.Details.Causes {
+					a := &in.ObjectMeta.Initializers.Result.Details.Causes[i]
+				}
+			}
+		}
+	}
+	for i := range in.ObjectMeta.Finalizers {
+		a := &in.ObjectMeta.Finalizers[i]
+	}
+	for i := range in.Spec.Finalizers {
+		a := &in.Spec.Finalizers[i]
+	}
 	SetDefaults_NamespaceStatus(&in.Status)
 }
 
@@ -113,9 +426,61 @@ func SetObjectDefaults_NamespaceList(in *NamespaceList) {
 
 func SetObjectDefaults_Node(in *Node) {
 	SetDefaults_Node(in)
+	if in.ObjectMeta.CreationTimestamp.Time.loc != nil {
+		for i := range in.ObjectMeta.CreationTimestamp.Time.loc.zone {
+			a := &in.ObjectMeta.CreationTimestamp.Time.loc.zone[i]
+		}
+		for i := range in.ObjectMeta.CreationTimestamp.Time.loc.tx {
+			a := &in.ObjectMeta.CreationTimestamp.Time.loc.tx[i]
+		}
+		if in.ObjectMeta.CreationTimestamp.Time.loc.cacheZone != nil {
+		}
+	}
+	if in.ObjectMeta.DeletionTimestamp != nil {
+	}
+	if in.ObjectMeta.DeletionGracePeriodSeconds != nil {
+	}
+	for i := range in.ObjectMeta.OwnerReferences {
+		a := &in.ObjectMeta.OwnerReferences[i]
+		if a.Controller != nil {
+		}
+	}
+	if in.ObjectMeta.Initializers != nil {
+		for i := range in.ObjectMeta.Initializers.Pending {
+			a := &in.ObjectMeta.Initializers.Pending[i]
+		}
+		if in.ObjectMeta.Initializers.Result != nil {
+			if in.ObjectMeta.Initializers.Result.Details != nil {
+				for i := range in.ObjectMeta.Initializers.Result.Details.Causes {
+					a := &in.ObjectMeta.Initializers.Result.Details.Causes[i]
+				}
+			}
+		}
+	}
+	for i := range in.ObjectMeta.Finalizers {
+		a := &in.ObjectMeta.Finalizers[i]
+	}
+	for i := range in.Spec.Taints {
+		a := &in.Spec.Taints[i]
+	}
 	SetDefaults_NodeStatus(&in.Status)
 	SetDefaults_ResourceList(&in.Status.Capacity)
 	SetDefaults_ResourceList(&in.Status.Allocatable)
+	for i := range in.Status.Conditions {
+		a := &in.Status.Conditions[i]
+	}
+	for i := range in.Status.Addresses {
+		a := &in.Status.Addresses[i]
+	}
+	for i := range in.Status.Images {
+		a := &in.Status.Images[i]
+	}
+	for i := range in.Status.VolumesInUse {
+		a := &in.Status.VolumesInUse[i]
+	}
+	for i := range in.Status.VolumesAttached {
+		a := &in.Status.VolumesAttached[i]
+	}
 }
 
 func SetObjectDefaults_NodeList(in *NodeList) {
@@ -125,27 +490,155 @@ func SetObjectDefaults_NodeList(in *NodeList) {
 	}
 }
 
+func SetObjectDefaults_NodeProxyOptions(in *NodeProxyOptions) {
+}
+
 func SetObjectDefaults_PersistentVolume(in *PersistentVolume) {
 	SetDefaults_PersistentVolume(in)
+	if in.ObjectMeta.CreationTimestamp.Time.loc != nil {
+		for i := range in.ObjectMeta.CreationTimestamp.Time.loc.zone {
+			a := &in.ObjectMeta.CreationTimestamp.Time.loc.zone[i]
+		}
+		for i := range in.ObjectMeta.CreationTimestamp.Time.loc.tx {
+			a := &in.ObjectMeta.CreationTimestamp.Time.loc.tx[i]
+		}
+		if in.ObjectMeta.CreationTimestamp.Time.loc.cacheZone != nil {
+		}
+	}
+	if in.ObjectMeta.DeletionTimestamp != nil {
+	}
+	if in.ObjectMeta.DeletionGracePeriodSeconds != nil {
+	}
+	for i := range in.ObjectMeta.OwnerReferences {
+		a := &in.ObjectMeta.OwnerReferences[i]
+		if a.Controller != nil {
+		}
+	}
+	if in.ObjectMeta.Initializers != nil {
+		for i := range in.ObjectMeta.Initializers.Pending {
+			a := &in.ObjectMeta.Initializers.Pending[i]
+		}
+		if in.ObjectMeta.Initializers.Result != nil {
+			if in.ObjectMeta.Initializers.Result.Details != nil {
+				for i := range in.ObjectMeta.Initializers.Result.Details.Causes {
+					a := &in.ObjectMeta.Initializers.Result.Details.Causes[i]
+				}
+			}
+		}
+	}
+	for i := range in.ObjectMeta.Finalizers {
+		a := &in.ObjectMeta.Finalizers[i]
+	}
 	SetDefaults_ResourceList(&in.Spec.Capacity)
+	if in.Spec.PersistentVolumeSource.GCEPersistentDisk != nil {
+	}
+	if in.Spec.PersistentVolumeSource.AWSElasticBlockStore != nil {
+	}
+	if in.Spec.PersistentVolumeSource.HostPath != nil {
+	}
+	if in.Spec.PersistentVolumeSource.Glusterfs != nil {
+	}
+	if in.Spec.PersistentVolumeSource.NFS != nil {
+	}
 	if in.Spec.PersistentVolumeSource.RBD != nil {
 		SetDefaults_RBDVolumeSource(in.Spec.PersistentVolumeSource.RBD)
+		if in.Spec.PersistentVolumeSource.RBD.SecretRef != nil {
+		}
 	}
 	if in.Spec.PersistentVolumeSource.ISCSI != nil {
 		SetDefaults_ISCSIVolumeSource(in.Spec.PersistentVolumeSource.ISCSI)
 	}
+	if in.Spec.PersistentVolumeSource.Cinder != nil {
+	}
+	if in.Spec.PersistentVolumeSource.CephFS != nil {
+	}
+	if in.Spec.PersistentVolumeSource.FC != nil {
+		if in.Spec.PersistentVolumeSource.FC.Lun != nil {
+		}
+	}
+	if in.Spec.PersistentVolumeSource.Flocker != nil {
+	}
+	if in.Spec.PersistentVolumeSource.FlexVolume != nil {
+	}
+	if in.Spec.PersistentVolumeSource.AzureFile != nil {
+	}
+	if in.Spec.PersistentVolumeSource.VsphereVolume != nil {
+	}
+	if in.Spec.PersistentVolumeSource.Quobyte != nil {
+	}
 	if in.Spec.PersistentVolumeSource.AzureDisk != nil {
 		SetDefaults_AzureDiskVolumeSource(in.Spec.PersistentVolumeSource.AzureDisk)
+		if in.Spec.PersistentVolumeSource.AzureDisk.CachingMode != nil {
+		}
+		if in.Spec.PersistentVolumeSource.AzureDisk.FSType != nil {
+		}
+		if in.Spec.PersistentVolumeSource.AzureDisk.Kind != nil {
+		}
+	}
+	if in.Spec.PersistentVolumeSource.PhotonPersistentDisk != nil {
+	}
+	if in.Spec.PersistentVolumeSource.PortworxVolume != nil {
 	}
 	if in.Spec.PersistentVolumeSource.ScaleIO != nil {
 		SetDefaults_ScaleIOVolumeSource(in.Spec.PersistentVolumeSource.ScaleIO)
+	}
+	if in.Spec.PersistentVolumeSource.Local != nil {
+	}
+	for i := range in.Spec.AccessModes {
+		a := &in.Spec.AccessModes[i]
+	}
+	if in.Spec.ClaimRef != nil {
 	}
 }
 
 func SetObjectDefaults_PersistentVolumeClaim(in *PersistentVolumeClaim) {
 	SetDefaults_PersistentVolumeClaim(in)
+	if in.ObjectMeta.CreationTimestamp.Time.loc != nil {
+		for i := range in.ObjectMeta.CreationTimestamp.Time.loc.zone {
+			a := &in.ObjectMeta.CreationTimestamp.Time.loc.zone[i]
+		}
+		for i := range in.ObjectMeta.CreationTimestamp.Time.loc.tx {
+			a := &in.ObjectMeta.CreationTimestamp.Time.loc.tx[i]
+		}
+		if in.ObjectMeta.CreationTimestamp.Time.loc.cacheZone != nil {
+		}
+	}
+	if in.ObjectMeta.DeletionTimestamp != nil {
+	}
+	if in.ObjectMeta.DeletionGracePeriodSeconds != nil {
+	}
+	for i := range in.ObjectMeta.OwnerReferences {
+		a := &in.ObjectMeta.OwnerReferences[i]
+		if a.Controller != nil {
+		}
+	}
+	if in.ObjectMeta.Initializers != nil {
+		for i := range in.ObjectMeta.Initializers.Pending {
+			a := &in.ObjectMeta.Initializers.Pending[i]
+		}
+		if in.ObjectMeta.Initializers.Result != nil {
+			if in.ObjectMeta.Initializers.Result.Details != nil {
+				for i := range in.ObjectMeta.Initializers.Result.Details.Causes {
+					a := &in.ObjectMeta.Initializers.Result.Details.Causes[i]
+				}
+			}
+		}
+	}
+	for i := range in.ObjectMeta.Finalizers {
+		a := &in.ObjectMeta.Finalizers[i]
+	}
+	for i := range in.Spec.AccessModes {
+		a := &in.Spec.AccessModes[i]
+	}
+	if in.Spec.Selector != nil {
+		for i := range in.Spec.Selector.MatchExpressions {
+			a := &in.Spec.Selector.MatchExpressions[i]
+		}
+	}
 	SetDefaults_ResourceList(&in.Spec.Resources.Limits)
 	SetDefaults_ResourceList(&in.Spec.Resources.Requests)
+	if in.Spec.StorageClassName != nil {
+	}
 	SetDefaults_ResourceList(&in.Status.Capacity)
 }
 
@@ -165,18 +658,85 @@ func SetObjectDefaults_PersistentVolumeList(in *PersistentVolumeList) {
 
 func SetObjectDefaults_Pod(in *Pod) {
 	SetDefaults_Pod(in)
+	if in.ObjectMeta.CreationTimestamp.Time.loc != nil {
+		for i := range in.ObjectMeta.CreationTimestamp.Time.loc.zone {
+			a := &in.ObjectMeta.CreationTimestamp.Time.loc.zone[i]
+		}
+		for i := range in.ObjectMeta.CreationTimestamp.Time.loc.tx {
+			a := &in.ObjectMeta.CreationTimestamp.Time.loc.tx[i]
+		}
+		if in.ObjectMeta.CreationTimestamp.Time.loc.cacheZone != nil {
+		}
+	}
+	if in.ObjectMeta.DeletionTimestamp != nil {
+	}
+	if in.ObjectMeta.DeletionGracePeriodSeconds != nil {
+	}
+	for i := range in.ObjectMeta.OwnerReferences {
+		a := &in.ObjectMeta.OwnerReferences[i]
+		if a.Controller != nil {
+		}
+	}
+	if in.ObjectMeta.Initializers != nil {
+		for i := range in.ObjectMeta.Initializers.Pending {
+			a := &in.ObjectMeta.Initializers.Pending[i]
+		}
+		if in.ObjectMeta.Initializers.Result != nil {
+			if in.ObjectMeta.Initializers.Result.Details != nil {
+				for i := range in.ObjectMeta.Initializers.Result.Details.Causes {
+					a := &in.ObjectMeta.Initializers.Result.Details.Causes[i]
+				}
+			}
+		}
+	}
+	for i := range in.ObjectMeta.Finalizers {
+		a := &in.ObjectMeta.Finalizers[i]
+	}
 	SetDefaults_PodSpec(&in.Spec)
 	for i := range in.Spec.Volumes {
 		a := &in.Spec.Volumes[i]
 		SetDefaults_Volume(a)
+		if a.VolumeSource.HostPath != nil {
+		}
+		if a.VolumeSource.EmptyDir != nil {
+			if a.VolumeSource.EmptyDir.SizeLimit.d.Dec != nil {
+			}
+		}
+		if a.VolumeSource.GCEPersistentDisk != nil {
+		}
+		if a.VolumeSource.AWSElasticBlockStore != nil {
+		}
+		if a.VolumeSource.GitRepo != nil {
+		}
 		if a.VolumeSource.Secret != nil {
 			SetDefaults_SecretVolumeSource(a.VolumeSource.Secret)
+			for j := range a.VolumeSource.Secret.Items {
+				b := &a.VolumeSource.Secret.Items[j]
+				if b.Mode != nil {
+				}
+			}
+		}
+		if a.VolumeSource.NFS != nil {
 		}
 		if a.VolumeSource.ISCSI != nil {
 			SetDefaults_ISCSIVolumeSource(a.VolumeSource.ISCSI)
+			if a.VolumeSource.ISCSI.SecretRef != nil {
+			}
+		}
+		if a.VolumeSource.Glusterfs != nil {
+		}
+		if a.VolumeSource.PersistentVolumeClaim != nil {
 		}
 		if a.VolumeSource.RBD != nil {
 			SetDefaults_RBDVolumeSource(a.VolumeSource.RBD)
+		}
+		if a.VolumeSource.FlexVolume != nil {
+		}
+		if a.VolumeSource.Cinder != nil {
+		}
+		if a.VolumeSource.CephFS != nil {
+		}
+		if a.VolumeSource.Flocker != nil {
 		}
 		if a.VolumeSource.DownwardAPI != nil {
 			SetDefaults_DownwardAPIVolumeSource(a.VolumeSource.DownwardAPI)
@@ -185,27 +745,45 @@ func SetObjectDefaults_Pod(in *Pod) {
 				if b.FieldRef != nil {
 					SetDefaults_ObjectFieldSelector(b.FieldRef)
 				}
+				if b.ResourceFieldRef != nil {
+				}
 			}
+		}
+		if a.VolumeSource.FC != nil {
+		}
+		if a.VolumeSource.AzureFile != nil {
 		}
 		if a.VolumeSource.ConfigMap != nil {
 			SetDefaults_ConfigMapVolumeSource(a.VolumeSource.ConfigMap)
 		}
+		if a.VolumeSource.VsphereVolume != nil {
+		}
+		if a.VolumeSource.Quobyte != nil {
+		}
 		if a.VolumeSource.AzureDisk != nil {
 			SetDefaults_AzureDiskVolumeSource(a.VolumeSource.AzureDisk)
+			if a.VolumeSource.AzureDisk.CachingMode != nil {
+			}
+			if a.VolumeSource.AzureDisk.FSType != nil {
+			}
+			if a.VolumeSource.AzureDisk.Kind != nil {
+			}
+		}
+		if a.VolumeSource.PhotonPersistentDisk != nil {
 		}
 		if a.VolumeSource.Projected != nil {
 			SetDefaults_ProjectedVolumeSource(a.VolumeSource.Projected)
 			for j := range a.VolumeSource.Projected.Sources {
 				b := &a.VolumeSource.Projected.Sources[j]
+				if b.Secret != nil {
+				}
 				if b.DownwardAPI != nil {
-					for k := range b.DownwardAPI.Items {
-						c := &b.DownwardAPI.Items[k]
-						if c.FieldRef != nil {
-							SetDefaults_ObjectFieldSelector(c.FieldRef)
-						}
-					}
+				}
+				if b.ConfigMap != nil {
 				}
 			}
+		}
+		if a.VolumeSource.PortworxVolume != nil {
 		}
 		if a.VolumeSource.ScaleIO != nil {
 			SetDefaults_ScaleIOVolumeSource(a.VolumeSource.ScaleIO)
@@ -218,81 +796,112 @@ func SetObjectDefaults_Pod(in *Pod) {
 			b := &a.Ports[j]
 			SetDefaults_ContainerPort(b)
 		}
+		for j := range a.EnvFrom {
+			b := &a.EnvFrom[j]
+			if b.ConfigMapRef != nil {
+			}
+			if b.SecretRef != nil {
+			}
+		}
 		for j := range a.Env {
 			b := &a.Env[j]
 			if b.ValueFrom != nil {
-				if b.ValueFrom.FieldRef != nil {
-					SetDefaults_ObjectFieldSelector(b.ValueFrom.FieldRef)
+				if b.ValueFrom.ConfigMapKeyRef != nil {
+				}
+				if b.ValueFrom.SecretKeyRef != nil {
 				}
 			}
 		}
 		SetDefaults_ResourceList(&a.Resources.Limits)
 		SetDefaults_ResourceList(&a.Resources.Requests)
+		for j := range a.VolumeMounts {
+			b := &a.VolumeMounts[j]
+		}
 		if a.LivenessProbe != nil {
 			SetDefaults_Probe(a.LivenessProbe)
+			if a.LivenessProbe.Handler.Exec != nil {
+			}
 			if a.LivenessProbe.Handler.HTTPGet != nil {
 				SetDefaults_HTTPGetAction(a.LivenessProbe.Handler.HTTPGet)
+				for j := range a.LivenessProbe.Handler.HTTPGet.HTTPHeaders {
+					b := &a.LivenessProbe.Handler.HTTPGet.HTTPHeaders[j]
+				}
 			}
-		}
-		if a.ReadinessProbe != nil {
-			SetDefaults_Probe(a.ReadinessProbe)
-			if a.ReadinessProbe.Handler.HTTPGet != nil {
-				SetDefaults_HTTPGetAction(a.ReadinessProbe.Handler.HTTPGet)
+			if a.LivenessProbe.Handler.TCPSocket != nil {
 			}
 		}
 		if a.Lifecycle != nil {
 			if a.Lifecycle.PostStart != nil {
-				if a.Lifecycle.PostStart.HTTPGet != nil {
-					SetDefaults_HTTPGetAction(a.Lifecycle.PostStart.HTTPGet)
+			}
+		}
+		if a.SecurityContext != nil {
+			if a.SecurityContext.Capabilities != nil {
+				for j := range a.SecurityContext.Capabilities.Add {
+					b := &a.SecurityContext.Capabilities.Add[j]
 				}
 			}
-			if a.Lifecycle.PreStop != nil {
-				if a.Lifecycle.PreStop.HTTPGet != nil {
-					SetDefaults_HTTPGetAction(a.Lifecycle.PreStop.HTTPGet)
-				}
+			if a.SecurityContext.SELinuxOptions != nil {
+			}
+			if a.SecurityContext.RunAsUser != nil {
 			}
 		}
 	}
-	for i := range in.Spec.Containers {
-		a := &in.Spec.Containers[i]
-		SetDefaults_Container(a)
-		for j := range a.Ports {
-			b := &a.Ports[j]
-			SetDefaults_ContainerPort(b)
+	if in.Spec.SecurityContext != nil {
+		for i := range in.Spec.SecurityContext.SupplementalGroups {
+			a := &in.Spec.SecurityContext.SupplementalGroups[i]
 		}
-		for j := range a.Env {
-			b := &a.Env[j]
-			if b.ValueFrom != nil {
-				if b.ValueFrom.FieldRef != nil {
-					SetDefaults_ObjectFieldSelector(b.ValueFrom.FieldRef)
+		if in.Spec.SecurityContext.FSGroup != nil {
+		}
+	}
+	for i := range in.Spec.ImagePullSecrets {
+		a := &in.Spec.ImagePullSecrets[i]
+	}
+	if in.Spec.Affinity != nil {
+		if in.Spec.Affinity.NodeAffinity != nil {
+			if in.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution != nil {
+				for i := range in.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms {
+					a := &in.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms[i]
+					for j := range a.MatchExpressions {
+						b := &a.MatchExpressions[j]
+					}
 				}
 			}
-		}
-		SetDefaults_ResourceList(&a.Resources.Limits)
-		SetDefaults_ResourceList(&a.Resources.Requests)
-		if a.LivenessProbe != nil {
-			SetDefaults_Probe(a.LivenessProbe)
-			if a.LivenessProbe.Handler.HTTPGet != nil {
-				SetDefaults_HTTPGetAction(a.LivenessProbe.Handler.HTTPGet)
+			for i := range in.Spec.Affinity.NodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution {
+				a := &in.Spec.Affinity.NodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution[i]
 			}
 		}
-		if a.ReadinessProbe != nil {
-			SetDefaults_Probe(a.ReadinessProbe)
-			if a.ReadinessProbe.Handler.HTTPGet != nil {
-				SetDefaults_HTTPGetAction(a.ReadinessProbe.Handler.HTTPGet)
-			}
-		}
-		if a.Lifecycle != nil {
-			if a.Lifecycle.PostStart != nil {
-				if a.Lifecycle.PostStart.HTTPGet != nil {
-					SetDefaults_HTTPGetAction(a.Lifecycle.PostStart.HTTPGet)
+		if in.Spec.Affinity.PodAffinity != nil {
+			for i := range in.Spec.Affinity.PodAffinity.RequiredDuringSchedulingIgnoredDuringExecution {
+				a := &in.Spec.Affinity.PodAffinity.RequiredDuringSchedulingIgnoredDuringExecution[i]
+				if a.LabelSelector != nil {
+					for j := range a.LabelSelector.MatchExpressions {
+						b := &a.LabelSelector.MatchExpressions[j]
+					}
 				}
 			}
-			if a.Lifecycle.PreStop != nil {
-				if a.Lifecycle.PreStop.HTTPGet != nil {
-					SetDefaults_HTTPGetAction(a.Lifecycle.PreStop.HTTPGet)
-				}
+			for i := range in.Spec.Affinity.PodAffinity.PreferredDuringSchedulingIgnoredDuringExecution {
+				a := &in.Spec.Affinity.PodAffinity.PreferredDuringSchedulingIgnoredDuringExecution[i]
 			}
+		}
+		if in.Spec.Affinity.PodAntiAffinity != nil {
+		}
+	}
+	for i := range in.Spec.Tolerations {
+		a := &in.Spec.Tolerations[i]
+	}
+	for i := range in.Spec.HostAliases {
+		a := &in.Spec.HostAliases[i]
+	}
+	for i := range in.Status.Conditions {
+		a := &in.Status.Conditions[i]
+	}
+	for i := range in.Status.InitContainerStatuses {
+		a := &in.Status.InitContainerStatuses[i]
+		if a.State.Waiting != nil {
+		}
+		if a.State.Running != nil {
+		}
+		if a.State.Terminated != nil {
 		}
 	}
 }
@@ -303,6 +912,9 @@ func SetObjectDefaults_PodAttachOptions(in *PodAttachOptions) {
 
 func SetObjectDefaults_PodExecOptions(in *PodExecOptions) {
 	SetDefaults_PodExecOptions(in)
+	for i := range in.Command {
+		a := &in.Command[i]
+	}
 }
 
 func SetObjectDefaults_PodList(in *PodList) {
@@ -312,19 +924,156 @@ func SetObjectDefaults_PodList(in *PodList) {
 	}
 }
 
+func SetObjectDefaults_PodLogOptions(in *PodLogOptions) {
+	if in.SinceTime != nil {
+		if in.SinceTime.Time.loc != nil {
+			for i := range in.SinceTime.Time.loc.zone {
+				a := &in.SinceTime.Time.loc.zone[i]
+			}
+			for i := range in.SinceTime.Time.loc.tx {
+				a := &in.SinceTime.Time.loc.tx[i]
+			}
+			if in.SinceTime.Time.loc.cacheZone != nil {
+			}
+		}
+	}
+}
+
+func SetObjectDefaults_PodPortForwardOptions(in *PodPortForwardOptions) {
+}
+
+func SetObjectDefaults_PodProxyOptions(in *PodProxyOptions) {
+}
+
+func SetObjectDefaults_PodStatusResult(in *PodStatusResult) {
+	if in.ObjectMeta.CreationTimestamp.Time.loc != nil {
+		for i := range in.ObjectMeta.CreationTimestamp.Time.loc.zone {
+			a := &in.ObjectMeta.CreationTimestamp.Time.loc.zone[i]
+		}
+		for i := range in.ObjectMeta.CreationTimestamp.Time.loc.tx {
+			a := &in.ObjectMeta.CreationTimestamp.Time.loc.tx[i]
+		}
+		if in.ObjectMeta.CreationTimestamp.Time.loc.cacheZone != nil {
+		}
+	}
+	if in.ObjectMeta.DeletionTimestamp != nil {
+	}
+	if in.ObjectMeta.DeletionGracePeriodSeconds != nil {
+	}
+	for i := range in.ObjectMeta.OwnerReferences {
+		a := &in.ObjectMeta.OwnerReferences[i]
+		if a.Controller != nil {
+		}
+	}
+	if in.ObjectMeta.Initializers != nil {
+		for i := range in.ObjectMeta.Initializers.Pending {
+			a := &in.ObjectMeta.Initializers.Pending[i]
+		}
+		if in.ObjectMeta.Initializers.Result != nil {
+			if in.ObjectMeta.Initializers.Result.Details != nil {
+				for i := range in.ObjectMeta.Initializers.Result.Details.Causes {
+					a := &in.ObjectMeta.Initializers.Result.Details.Causes[i]
+				}
+			}
+		}
+	}
+	for i := range in.ObjectMeta.Finalizers {
+		a := &in.ObjectMeta.Finalizers[i]
+	}
+	for i := range in.Status.Conditions {
+		a := &in.Status.Conditions[i]
+	}
+	for i := range in.Status.InitContainerStatuses {
+		a := &in.Status.InitContainerStatuses[i]
+		if a.State.Waiting != nil {
+		}
+		if a.State.Running != nil {
+		}
+		if a.State.Terminated != nil {
+		}
+	}
+}
+
 func SetObjectDefaults_PodTemplate(in *PodTemplate) {
+	if in.ObjectMeta.CreationTimestamp.Time.loc != nil {
+		for i := range in.ObjectMeta.CreationTimestamp.Time.loc.zone {
+			a := &in.ObjectMeta.CreationTimestamp.Time.loc.zone[i]
+		}
+		for i := range in.ObjectMeta.CreationTimestamp.Time.loc.tx {
+			a := &in.ObjectMeta.CreationTimestamp.Time.loc.tx[i]
+		}
+		if in.ObjectMeta.CreationTimestamp.Time.loc.cacheZone != nil {
+		}
+	}
+	if in.ObjectMeta.DeletionTimestamp != nil {
+	}
+	if in.ObjectMeta.DeletionGracePeriodSeconds != nil {
+	}
+	for i := range in.ObjectMeta.OwnerReferences {
+		a := &in.ObjectMeta.OwnerReferences[i]
+		if a.Controller != nil {
+		}
+	}
+	if in.ObjectMeta.Initializers != nil {
+		for i := range in.ObjectMeta.Initializers.Pending {
+			a := &in.ObjectMeta.Initializers.Pending[i]
+		}
+		if in.ObjectMeta.Initializers.Result != nil {
+			if in.ObjectMeta.Initializers.Result.Details != nil {
+				for i := range in.ObjectMeta.Initializers.Result.Details.Causes {
+					a := &in.ObjectMeta.Initializers.Result.Details.Causes[i]
+				}
+			}
+		}
+	}
+	for i := range in.ObjectMeta.Finalizers {
+		a := &in.ObjectMeta.Finalizers[i]
+	}
 	SetDefaults_PodSpec(&in.Template.Spec)
 	for i := range in.Template.Spec.Volumes {
 		a := &in.Template.Spec.Volumes[i]
 		SetDefaults_Volume(a)
+		if a.VolumeSource.HostPath != nil {
+		}
+		if a.VolumeSource.EmptyDir != nil {
+			if a.VolumeSource.EmptyDir.SizeLimit.d.Dec != nil {
+			}
+		}
+		if a.VolumeSource.GCEPersistentDisk != nil {
+		}
+		if a.VolumeSource.AWSElasticBlockStore != nil {
+		}
+		if a.VolumeSource.GitRepo != nil {
+		}
 		if a.VolumeSource.Secret != nil {
 			SetDefaults_SecretVolumeSource(a.VolumeSource.Secret)
+			for j := range a.VolumeSource.Secret.Items {
+				b := &a.VolumeSource.Secret.Items[j]
+				if b.Mode != nil {
+				}
+			}
+		}
+		if a.VolumeSource.NFS != nil {
 		}
 		if a.VolumeSource.ISCSI != nil {
 			SetDefaults_ISCSIVolumeSource(a.VolumeSource.ISCSI)
+			if a.VolumeSource.ISCSI.SecretRef != nil {
+			}
+		}
+		if a.VolumeSource.Glusterfs != nil {
+		}
+		if a.VolumeSource.PersistentVolumeClaim != nil {
 		}
 		if a.VolumeSource.RBD != nil {
 			SetDefaults_RBDVolumeSource(a.VolumeSource.RBD)
+		}
+		if a.VolumeSource.FlexVolume != nil {
+		}
+		if a.VolumeSource.Cinder != nil {
+		}
+		if a.VolumeSource.CephFS != nil {
+		}
+		if a.VolumeSource.Flocker != nil {
 		}
 		if a.VolumeSource.DownwardAPI != nil {
 			SetDefaults_DownwardAPIVolumeSource(a.VolumeSource.DownwardAPI)
@@ -333,27 +1082,45 @@ func SetObjectDefaults_PodTemplate(in *PodTemplate) {
 				if b.FieldRef != nil {
 					SetDefaults_ObjectFieldSelector(b.FieldRef)
 				}
+				if b.ResourceFieldRef != nil {
+				}
 			}
+		}
+		if a.VolumeSource.FC != nil {
+		}
+		if a.VolumeSource.AzureFile != nil {
 		}
 		if a.VolumeSource.ConfigMap != nil {
 			SetDefaults_ConfigMapVolumeSource(a.VolumeSource.ConfigMap)
 		}
+		if a.VolumeSource.VsphereVolume != nil {
+		}
+		if a.VolumeSource.Quobyte != nil {
+		}
 		if a.VolumeSource.AzureDisk != nil {
 			SetDefaults_AzureDiskVolumeSource(a.VolumeSource.AzureDisk)
+			if a.VolumeSource.AzureDisk.CachingMode != nil {
+			}
+			if a.VolumeSource.AzureDisk.FSType != nil {
+			}
+			if a.VolumeSource.AzureDisk.Kind != nil {
+			}
+		}
+		if a.VolumeSource.PhotonPersistentDisk != nil {
 		}
 		if a.VolumeSource.Projected != nil {
 			SetDefaults_ProjectedVolumeSource(a.VolumeSource.Projected)
 			for j := range a.VolumeSource.Projected.Sources {
 				b := &a.VolumeSource.Projected.Sources[j]
+				if b.Secret != nil {
+				}
 				if b.DownwardAPI != nil {
-					for k := range b.DownwardAPI.Items {
-						c := &b.DownwardAPI.Items[k]
-						if c.FieldRef != nil {
-							SetDefaults_ObjectFieldSelector(c.FieldRef)
-						}
-					}
+				}
+				if b.ConfigMap != nil {
 				}
 			}
+		}
+		if a.VolumeSource.PortworxVolume != nil {
 		}
 		if a.VolumeSource.ScaleIO != nil {
 			SetDefaults_ScaleIOVolumeSource(a.VolumeSource.ScaleIO)
@@ -366,82 +1133,101 @@ func SetObjectDefaults_PodTemplate(in *PodTemplate) {
 			b := &a.Ports[j]
 			SetDefaults_ContainerPort(b)
 		}
+		for j := range a.EnvFrom {
+			b := &a.EnvFrom[j]
+			if b.ConfigMapRef != nil {
+			}
+			if b.SecretRef != nil {
+			}
+		}
 		for j := range a.Env {
 			b := &a.Env[j]
 			if b.ValueFrom != nil {
-				if b.ValueFrom.FieldRef != nil {
-					SetDefaults_ObjectFieldSelector(b.ValueFrom.FieldRef)
+				if b.ValueFrom.ConfigMapKeyRef != nil {
+				}
+				if b.ValueFrom.SecretKeyRef != nil {
 				}
 			}
 		}
 		SetDefaults_ResourceList(&a.Resources.Limits)
 		SetDefaults_ResourceList(&a.Resources.Requests)
+		for j := range a.VolumeMounts {
+			b := &a.VolumeMounts[j]
+		}
 		if a.LivenessProbe != nil {
 			SetDefaults_Probe(a.LivenessProbe)
+			if a.LivenessProbe.Handler.Exec != nil {
+			}
 			if a.LivenessProbe.Handler.HTTPGet != nil {
 				SetDefaults_HTTPGetAction(a.LivenessProbe.Handler.HTTPGet)
+				for j := range a.LivenessProbe.Handler.HTTPGet.HTTPHeaders {
+					b := &a.LivenessProbe.Handler.HTTPGet.HTTPHeaders[j]
+				}
 			}
-		}
-		if a.ReadinessProbe != nil {
-			SetDefaults_Probe(a.ReadinessProbe)
-			if a.ReadinessProbe.Handler.HTTPGet != nil {
-				SetDefaults_HTTPGetAction(a.ReadinessProbe.Handler.HTTPGet)
+			if a.LivenessProbe.Handler.TCPSocket != nil {
 			}
 		}
 		if a.Lifecycle != nil {
 			if a.Lifecycle.PostStart != nil {
-				if a.Lifecycle.PostStart.HTTPGet != nil {
-					SetDefaults_HTTPGetAction(a.Lifecycle.PostStart.HTTPGet)
+			}
+		}
+		if a.SecurityContext != nil {
+			if a.SecurityContext.Capabilities != nil {
+				for j := range a.SecurityContext.Capabilities.Add {
+					b := &a.SecurityContext.Capabilities.Add[j]
 				}
 			}
-			if a.Lifecycle.PreStop != nil {
-				if a.Lifecycle.PreStop.HTTPGet != nil {
-					SetDefaults_HTTPGetAction(a.Lifecycle.PreStop.HTTPGet)
-				}
+			if a.SecurityContext.SELinuxOptions != nil {
+			}
+			if a.SecurityContext.RunAsUser != nil {
 			}
 		}
 	}
-	for i := range in.Template.Spec.Containers {
-		a := &in.Template.Spec.Containers[i]
-		SetDefaults_Container(a)
-		for j := range a.Ports {
-			b := &a.Ports[j]
-			SetDefaults_ContainerPort(b)
+	if in.Template.Spec.SecurityContext != nil {
+		for i := range in.Template.Spec.SecurityContext.SupplementalGroups {
+			a := &in.Template.Spec.SecurityContext.SupplementalGroups[i]
 		}
-		for j := range a.Env {
-			b := &a.Env[j]
-			if b.ValueFrom != nil {
-				if b.ValueFrom.FieldRef != nil {
-					SetDefaults_ObjectFieldSelector(b.ValueFrom.FieldRef)
+		if in.Template.Spec.SecurityContext.FSGroup != nil {
+		}
+	}
+	for i := range in.Template.Spec.ImagePullSecrets {
+		a := &in.Template.Spec.ImagePullSecrets[i]
+	}
+	if in.Template.Spec.Affinity != nil {
+		if in.Template.Spec.Affinity.NodeAffinity != nil {
+			if in.Template.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution != nil {
+				for i := range in.Template.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms {
+					a := &in.Template.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms[i]
+					for j := range a.MatchExpressions {
+						b := &a.MatchExpressions[j]
+					}
 				}
 			}
-		}
-		SetDefaults_ResourceList(&a.Resources.Limits)
-		SetDefaults_ResourceList(&a.Resources.Requests)
-		if a.LivenessProbe != nil {
-			SetDefaults_Probe(a.LivenessProbe)
-			if a.LivenessProbe.Handler.HTTPGet != nil {
-				SetDefaults_HTTPGetAction(a.LivenessProbe.Handler.HTTPGet)
+			for i := range in.Template.Spec.Affinity.NodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution {
+				a := &in.Template.Spec.Affinity.NodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution[i]
 			}
 		}
-		if a.ReadinessProbe != nil {
-			SetDefaults_Probe(a.ReadinessProbe)
-			if a.ReadinessProbe.Handler.HTTPGet != nil {
-				SetDefaults_HTTPGetAction(a.ReadinessProbe.Handler.HTTPGet)
-			}
-		}
-		if a.Lifecycle != nil {
-			if a.Lifecycle.PostStart != nil {
-				if a.Lifecycle.PostStart.HTTPGet != nil {
-					SetDefaults_HTTPGetAction(a.Lifecycle.PostStart.HTTPGet)
+		if in.Template.Spec.Affinity.PodAffinity != nil {
+			for i := range in.Template.Spec.Affinity.PodAffinity.RequiredDuringSchedulingIgnoredDuringExecution {
+				a := &in.Template.Spec.Affinity.PodAffinity.RequiredDuringSchedulingIgnoredDuringExecution[i]
+				if a.LabelSelector != nil {
+					for j := range a.LabelSelector.MatchExpressions {
+						b := &a.LabelSelector.MatchExpressions[j]
+					}
 				}
 			}
-			if a.Lifecycle.PreStop != nil {
-				if a.Lifecycle.PreStop.HTTPGet != nil {
-					SetDefaults_HTTPGetAction(a.Lifecycle.PreStop.HTTPGet)
-				}
+			for i := range in.Template.Spec.Affinity.PodAffinity.PreferredDuringSchedulingIgnoredDuringExecution {
+				a := &in.Template.Spec.Affinity.PodAffinity.PreferredDuringSchedulingIgnoredDuringExecution[i]
 			}
 		}
+		if in.Template.Spec.Affinity.PodAntiAffinity != nil {
+		}
+	}
+	for i := range in.Template.Spec.Tolerations {
+		a := &in.Template.Spec.Tolerations[i]
+	}
+	for i := range in.Template.Spec.HostAliases {
+		a := &in.Template.Spec.HostAliases[i]
 	}
 }
 
@@ -452,21 +1238,128 @@ func SetObjectDefaults_PodTemplateList(in *PodTemplateList) {
 	}
 }
 
+func SetObjectDefaults_RangeAllocation(in *RangeAllocation) {
+	if in.ObjectMeta.CreationTimestamp.Time.loc != nil {
+		for i := range in.ObjectMeta.CreationTimestamp.Time.loc.zone {
+			a := &in.ObjectMeta.CreationTimestamp.Time.loc.zone[i]
+		}
+		for i := range in.ObjectMeta.CreationTimestamp.Time.loc.tx {
+			a := &in.ObjectMeta.CreationTimestamp.Time.loc.tx[i]
+		}
+		if in.ObjectMeta.CreationTimestamp.Time.loc.cacheZone != nil {
+		}
+	}
+	if in.ObjectMeta.DeletionTimestamp != nil {
+	}
+	if in.ObjectMeta.DeletionGracePeriodSeconds != nil {
+	}
+	for i := range in.ObjectMeta.OwnerReferences {
+		a := &in.ObjectMeta.OwnerReferences[i]
+		if a.Controller != nil {
+		}
+	}
+	if in.ObjectMeta.Initializers != nil {
+		for i := range in.ObjectMeta.Initializers.Pending {
+			a := &in.ObjectMeta.Initializers.Pending[i]
+		}
+		if in.ObjectMeta.Initializers.Result != nil {
+			if in.ObjectMeta.Initializers.Result.Details != nil {
+				for i := range in.ObjectMeta.Initializers.Result.Details.Causes {
+					a := &in.ObjectMeta.Initializers.Result.Details.Causes[i]
+				}
+			}
+		}
+	}
+	for i := range in.ObjectMeta.Finalizers {
+		a := &in.ObjectMeta.Finalizers[i]
+	}
+	for i := range in.Data {
+		a := &in.Data[i]
+	}
+}
+
 func SetObjectDefaults_ReplicationController(in *ReplicationController) {
 	SetDefaults_ReplicationController(in)
+	if in.ObjectMeta.CreationTimestamp.Time.loc != nil {
+		for i := range in.ObjectMeta.CreationTimestamp.Time.loc.zone {
+			a := &in.ObjectMeta.CreationTimestamp.Time.loc.zone[i]
+		}
+		for i := range in.ObjectMeta.CreationTimestamp.Time.loc.tx {
+			a := &in.ObjectMeta.CreationTimestamp.Time.loc.tx[i]
+		}
+		if in.ObjectMeta.CreationTimestamp.Time.loc.cacheZone != nil {
+		}
+	}
+	if in.ObjectMeta.DeletionTimestamp != nil {
+	}
+	if in.ObjectMeta.DeletionGracePeriodSeconds != nil {
+	}
+	for i := range in.ObjectMeta.OwnerReferences {
+		a := &in.ObjectMeta.OwnerReferences[i]
+		if a.Controller != nil {
+		}
+	}
+	if in.ObjectMeta.Initializers != nil {
+		for i := range in.ObjectMeta.Initializers.Pending {
+			a := &in.ObjectMeta.Initializers.Pending[i]
+		}
+		if in.ObjectMeta.Initializers.Result != nil {
+			if in.ObjectMeta.Initializers.Result.Details != nil {
+				for i := range in.ObjectMeta.Initializers.Result.Details.Causes {
+					a := &in.ObjectMeta.Initializers.Result.Details.Causes[i]
+				}
+			}
+		}
+	}
+	for i := range in.ObjectMeta.Finalizers {
+		a := &in.ObjectMeta.Finalizers[i]
+	}
+	if in.Spec.Replicas != nil {
+	}
 	if in.Spec.Template != nil {
 		SetDefaults_PodSpec(&in.Spec.Template.Spec)
 		for i := range in.Spec.Template.Spec.Volumes {
 			a := &in.Spec.Template.Spec.Volumes[i]
 			SetDefaults_Volume(a)
+			if a.VolumeSource.HostPath != nil {
+			}
+			if a.VolumeSource.EmptyDir != nil {
+				if a.VolumeSource.EmptyDir.SizeLimit.d.Dec != nil {
+				}
+			}
+			if a.VolumeSource.GCEPersistentDisk != nil {
+			}
+			if a.VolumeSource.AWSElasticBlockStore != nil {
+			}
+			if a.VolumeSource.GitRepo != nil {
+			}
 			if a.VolumeSource.Secret != nil {
 				SetDefaults_SecretVolumeSource(a.VolumeSource.Secret)
+				for j := range a.VolumeSource.Secret.Items {
+					b := &a.VolumeSource.Secret.Items[j]
+				}
+			}
+			if a.VolumeSource.NFS != nil {
 			}
 			if a.VolumeSource.ISCSI != nil {
 				SetDefaults_ISCSIVolumeSource(a.VolumeSource.ISCSI)
+				if a.VolumeSource.ISCSI.SecretRef != nil {
+				}
+			}
+			if a.VolumeSource.Glusterfs != nil {
+			}
+			if a.VolumeSource.PersistentVolumeClaim != nil {
 			}
 			if a.VolumeSource.RBD != nil {
 				SetDefaults_RBDVolumeSource(a.VolumeSource.RBD)
+			}
+			if a.VolumeSource.FlexVolume != nil {
+			}
+			if a.VolumeSource.Cinder != nil {
+			}
+			if a.VolumeSource.CephFS != nil {
+			}
+			if a.VolumeSource.Flocker != nil {
 			}
 			if a.VolumeSource.DownwardAPI != nil {
 				SetDefaults_DownwardAPIVolumeSource(a.VolumeSource.DownwardAPI)
@@ -475,27 +1368,45 @@ func SetObjectDefaults_ReplicationController(in *ReplicationController) {
 					if b.FieldRef != nil {
 						SetDefaults_ObjectFieldSelector(b.FieldRef)
 					}
+					if b.ResourceFieldRef != nil {
+					}
 				}
+			}
+			if a.VolumeSource.FC != nil {
+			}
+			if a.VolumeSource.AzureFile != nil {
 			}
 			if a.VolumeSource.ConfigMap != nil {
 				SetDefaults_ConfigMapVolumeSource(a.VolumeSource.ConfigMap)
 			}
+			if a.VolumeSource.VsphereVolume != nil {
+			}
+			if a.VolumeSource.Quobyte != nil {
+			}
 			if a.VolumeSource.AzureDisk != nil {
 				SetDefaults_AzureDiskVolumeSource(a.VolumeSource.AzureDisk)
+				if a.VolumeSource.AzureDisk.CachingMode != nil {
+				}
+				if a.VolumeSource.AzureDisk.FSType != nil {
+				}
+				if a.VolumeSource.AzureDisk.Kind != nil {
+				}
+			}
+			if a.VolumeSource.PhotonPersistentDisk != nil {
 			}
 			if a.VolumeSource.Projected != nil {
 				SetDefaults_ProjectedVolumeSource(a.VolumeSource.Projected)
 				for j := range a.VolumeSource.Projected.Sources {
 					b := &a.VolumeSource.Projected.Sources[j]
+					if b.Secret != nil {
+					}
 					if b.DownwardAPI != nil {
-						for k := range b.DownwardAPI.Items {
-							c := &b.DownwardAPI.Items[k]
-							if c.FieldRef != nil {
-								SetDefaults_ObjectFieldSelector(c.FieldRef)
-							}
-						}
+					}
+					if b.ConfigMap != nil {
 					}
 				}
+			}
+			if a.VolumeSource.PortworxVolume != nil {
 			}
 			if a.VolumeSource.ScaleIO != nil {
 				SetDefaults_ScaleIOVolumeSource(a.VolumeSource.ScaleIO)
@@ -508,83 +1419,105 @@ func SetObjectDefaults_ReplicationController(in *ReplicationController) {
 				b := &a.Ports[j]
 				SetDefaults_ContainerPort(b)
 			}
+			for j := range a.EnvFrom {
+				b := &a.EnvFrom[j]
+				if b.ConfigMapRef != nil {
+				}
+				if b.SecretRef != nil {
+				}
+			}
 			for j := range a.Env {
 				b := &a.Env[j]
 				if b.ValueFrom != nil {
-					if b.ValueFrom.FieldRef != nil {
-						SetDefaults_ObjectFieldSelector(b.ValueFrom.FieldRef)
+					if b.ValueFrom.ConfigMapKeyRef != nil {
+					}
+					if b.ValueFrom.SecretKeyRef != nil {
 					}
 				}
 			}
 			SetDefaults_ResourceList(&a.Resources.Limits)
 			SetDefaults_ResourceList(&a.Resources.Requests)
+			for j := range a.VolumeMounts {
+				b := &a.VolumeMounts[j]
+			}
 			if a.LivenessProbe != nil {
 				SetDefaults_Probe(a.LivenessProbe)
+				if a.LivenessProbe.Handler.Exec != nil {
+				}
 				if a.LivenessProbe.Handler.HTTPGet != nil {
 					SetDefaults_HTTPGetAction(a.LivenessProbe.Handler.HTTPGet)
+					for j := range a.LivenessProbe.Handler.HTTPGet.HTTPHeaders {
+						b := &a.LivenessProbe.Handler.HTTPGet.HTTPHeaders[j]
+					}
 				}
-			}
-			if a.ReadinessProbe != nil {
-				SetDefaults_Probe(a.ReadinessProbe)
-				if a.ReadinessProbe.Handler.HTTPGet != nil {
-					SetDefaults_HTTPGetAction(a.ReadinessProbe.Handler.HTTPGet)
+				if a.LivenessProbe.Handler.TCPSocket != nil {
 				}
 			}
 			if a.Lifecycle != nil {
 				if a.Lifecycle.PostStart != nil {
-					if a.Lifecycle.PostStart.HTTPGet != nil {
-						SetDefaults_HTTPGetAction(a.Lifecycle.PostStart.HTTPGet)
+				}
+			}
+			if a.SecurityContext != nil {
+				if a.SecurityContext.Capabilities != nil {
+					for j := range a.SecurityContext.Capabilities.Add {
+						b := &a.SecurityContext.Capabilities.Add[j]
 					}
 				}
-				if a.Lifecycle.PreStop != nil {
-					if a.Lifecycle.PreStop.HTTPGet != nil {
-						SetDefaults_HTTPGetAction(a.Lifecycle.PreStop.HTTPGet)
-					}
+				if a.SecurityContext.SELinuxOptions != nil {
+				}
+				if a.SecurityContext.RunAsUser != nil {
 				}
 			}
 		}
-		for i := range in.Spec.Template.Spec.Containers {
-			a := &in.Spec.Template.Spec.Containers[i]
-			SetDefaults_Container(a)
-			for j := range a.Ports {
-				b := &a.Ports[j]
-				SetDefaults_ContainerPort(b)
+		if in.Spec.Template.Spec.SecurityContext != nil {
+			for i := range in.Spec.Template.Spec.SecurityContext.SupplementalGroups {
+				a := &in.Spec.Template.Spec.SecurityContext.SupplementalGroups[i]
 			}
-			for j := range a.Env {
-				b := &a.Env[j]
-				if b.ValueFrom != nil {
-					if b.ValueFrom.FieldRef != nil {
-						SetDefaults_ObjectFieldSelector(b.ValueFrom.FieldRef)
-					}
-				}
-			}
-			SetDefaults_ResourceList(&a.Resources.Limits)
-			SetDefaults_ResourceList(&a.Resources.Requests)
-			if a.LivenessProbe != nil {
-				SetDefaults_Probe(a.LivenessProbe)
-				if a.LivenessProbe.Handler.HTTPGet != nil {
-					SetDefaults_HTTPGetAction(a.LivenessProbe.Handler.HTTPGet)
-				}
-			}
-			if a.ReadinessProbe != nil {
-				SetDefaults_Probe(a.ReadinessProbe)
-				if a.ReadinessProbe.Handler.HTTPGet != nil {
-					SetDefaults_HTTPGetAction(a.ReadinessProbe.Handler.HTTPGet)
-				}
-			}
-			if a.Lifecycle != nil {
-				if a.Lifecycle.PostStart != nil {
-					if a.Lifecycle.PostStart.HTTPGet != nil {
-						SetDefaults_HTTPGetAction(a.Lifecycle.PostStart.HTTPGet)
-					}
-				}
-				if a.Lifecycle.PreStop != nil {
-					if a.Lifecycle.PreStop.HTTPGet != nil {
-						SetDefaults_HTTPGetAction(a.Lifecycle.PreStop.HTTPGet)
-					}
-				}
+			if in.Spec.Template.Spec.SecurityContext.FSGroup != nil {
 			}
 		}
+		for i := range in.Spec.Template.Spec.ImagePullSecrets {
+			a := &in.Spec.Template.Spec.ImagePullSecrets[i]
+		}
+		if in.Spec.Template.Spec.Affinity != nil {
+			if in.Spec.Template.Spec.Affinity.NodeAffinity != nil {
+				if in.Spec.Template.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution != nil {
+					for i := range in.Spec.Template.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms {
+						a := &in.Spec.Template.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms[i]
+						for j := range a.MatchExpressions {
+							b := &a.MatchExpressions[j]
+						}
+					}
+				}
+				for i := range in.Spec.Template.Spec.Affinity.NodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution {
+					a := &in.Spec.Template.Spec.Affinity.NodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution[i]
+				}
+			}
+			if in.Spec.Template.Spec.Affinity.PodAffinity != nil {
+				for i := range in.Spec.Template.Spec.Affinity.PodAffinity.RequiredDuringSchedulingIgnoredDuringExecution {
+					a := &in.Spec.Template.Spec.Affinity.PodAffinity.RequiredDuringSchedulingIgnoredDuringExecution[i]
+					if a.LabelSelector != nil {
+						for j := range a.LabelSelector.MatchExpressions {
+							b := &a.LabelSelector.MatchExpressions[j]
+						}
+					}
+				}
+				for i := range in.Spec.Template.Spec.Affinity.PodAffinity.PreferredDuringSchedulingIgnoredDuringExecution {
+					a := &in.Spec.Template.Spec.Affinity.PodAffinity.PreferredDuringSchedulingIgnoredDuringExecution[i]
+				}
+			}
+			if in.Spec.Template.Spec.Affinity.PodAntiAffinity != nil {
+			}
+		}
+		for i := range in.Spec.Template.Spec.Tolerations {
+			a := &in.Spec.Template.Spec.Tolerations[i]
+		}
+		for i := range in.Spec.Template.Spec.HostAliases {
+			a := &in.Spec.Template.Spec.HostAliases[i]
+		}
+	}
+	for i := range in.Status.Conditions {
+		a := &in.Status.Conditions[i]
 	}
 }
 
@@ -596,7 +1529,44 @@ func SetObjectDefaults_ReplicationControllerList(in *ReplicationControllerList) 
 }
 
 func SetObjectDefaults_ResourceQuota(in *ResourceQuota) {
+	if in.ObjectMeta.CreationTimestamp.Time.loc != nil {
+		for i := range in.ObjectMeta.CreationTimestamp.Time.loc.zone {
+			a := &in.ObjectMeta.CreationTimestamp.Time.loc.zone[i]
+		}
+		for i := range in.ObjectMeta.CreationTimestamp.Time.loc.tx {
+			a := &in.ObjectMeta.CreationTimestamp.Time.loc.tx[i]
+		}
+		if in.ObjectMeta.CreationTimestamp.Time.loc.cacheZone != nil {
+		}
+	}
+	if in.ObjectMeta.DeletionTimestamp != nil {
+	}
+	if in.ObjectMeta.DeletionGracePeriodSeconds != nil {
+	}
+	for i := range in.ObjectMeta.OwnerReferences {
+		a := &in.ObjectMeta.OwnerReferences[i]
+		if a.Controller != nil {
+		}
+	}
+	if in.ObjectMeta.Initializers != nil {
+		for i := range in.ObjectMeta.Initializers.Pending {
+			a := &in.ObjectMeta.Initializers.Pending[i]
+		}
+		if in.ObjectMeta.Initializers.Result != nil {
+			if in.ObjectMeta.Initializers.Result.Details != nil {
+				for i := range in.ObjectMeta.Initializers.Result.Details.Causes {
+					a := &in.ObjectMeta.Initializers.Result.Details.Causes[i]
+				}
+			}
+		}
+	}
+	for i := range in.ObjectMeta.Finalizers {
+		a := &in.ObjectMeta.Finalizers[i]
+	}
 	SetDefaults_ResourceList(&in.Spec.Hard)
+	for i := range in.Spec.Scopes {
+		a := &in.Spec.Scopes[i]
+	}
 	SetDefaults_ResourceList(&in.Status.Hard)
 	SetDefaults_ResourceList(&in.Status.Used)
 }
@@ -610,6 +1580,40 @@ func SetObjectDefaults_ResourceQuotaList(in *ResourceQuotaList) {
 
 func SetObjectDefaults_Secret(in *Secret) {
 	SetDefaults_Secret(in)
+	if in.ObjectMeta.CreationTimestamp.Time.loc != nil {
+		for i := range in.ObjectMeta.CreationTimestamp.Time.loc.zone {
+			a := &in.ObjectMeta.CreationTimestamp.Time.loc.zone[i]
+		}
+		for i := range in.ObjectMeta.CreationTimestamp.Time.loc.tx {
+			a := &in.ObjectMeta.CreationTimestamp.Time.loc.tx[i]
+		}
+		if in.ObjectMeta.CreationTimestamp.Time.loc.cacheZone != nil {
+		}
+	}
+	if in.ObjectMeta.DeletionTimestamp != nil {
+	}
+	if in.ObjectMeta.DeletionGracePeriodSeconds != nil {
+	}
+	for i := range in.ObjectMeta.OwnerReferences {
+		a := &in.ObjectMeta.OwnerReferences[i]
+		if a.Controller != nil {
+		}
+	}
+	if in.ObjectMeta.Initializers != nil {
+		for i := range in.ObjectMeta.Initializers.Pending {
+			a := &in.ObjectMeta.Initializers.Pending[i]
+		}
+		if in.ObjectMeta.Initializers.Result != nil {
+			if in.ObjectMeta.Initializers.Result.Details != nil {
+				for i := range in.ObjectMeta.Initializers.Result.Details.Causes {
+					a := &in.ObjectMeta.Initializers.Result.Details.Causes[i]
+				}
+			}
+		}
+	}
+	for i := range in.ObjectMeta.Finalizers {
+		a := &in.ObjectMeta.Finalizers[i]
+	}
 }
 
 func SetObjectDefaults_SecretList(in *SecretList) {
@@ -619,8 +1623,101 @@ func SetObjectDefaults_SecretList(in *SecretList) {
 	}
 }
 
+func SetObjectDefaults_SerializedReference(in *SerializedReference) {
+}
+
 func SetObjectDefaults_Service(in *Service) {
 	SetDefaults_Service(in)
+	if in.ObjectMeta.CreationTimestamp.Time.loc != nil {
+		for i := range in.ObjectMeta.CreationTimestamp.Time.loc.zone {
+			a := &in.ObjectMeta.CreationTimestamp.Time.loc.zone[i]
+		}
+		for i := range in.ObjectMeta.CreationTimestamp.Time.loc.tx {
+			a := &in.ObjectMeta.CreationTimestamp.Time.loc.tx[i]
+		}
+		if in.ObjectMeta.CreationTimestamp.Time.loc.cacheZone != nil {
+		}
+	}
+	if in.ObjectMeta.DeletionTimestamp != nil {
+	}
+	if in.ObjectMeta.DeletionGracePeriodSeconds != nil {
+	}
+	for i := range in.ObjectMeta.OwnerReferences {
+		a := &in.ObjectMeta.OwnerReferences[i]
+		if a.Controller != nil {
+		}
+	}
+	if in.ObjectMeta.Initializers != nil {
+		for i := range in.ObjectMeta.Initializers.Pending {
+			a := &in.ObjectMeta.Initializers.Pending[i]
+		}
+		if in.ObjectMeta.Initializers.Result != nil {
+			if in.ObjectMeta.Initializers.Result.Details != nil {
+				for i := range in.ObjectMeta.Initializers.Result.Details.Causes {
+					a := &in.ObjectMeta.Initializers.Result.Details.Causes[i]
+				}
+			}
+		}
+	}
+	for i := range in.ObjectMeta.Finalizers {
+		a := &in.ObjectMeta.Finalizers[i]
+	}
+	for i := range in.Spec.Ports {
+		a := &in.Spec.Ports[i]
+	}
+	for i := range in.Status.LoadBalancer.Ingress {
+		a := &in.Status.LoadBalancer.Ingress[i]
+	}
+}
+
+func SetObjectDefaults_ServiceAccount(in *ServiceAccount) {
+	if in.ObjectMeta.CreationTimestamp.Time.loc != nil {
+		for i := range in.ObjectMeta.CreationTimestamp.Time.loc.zone {
+			a := &in.ObjectMeta.CreationTimestamp.Time.loc.zone[i]
+		}
+		for i := range in.ObjectMeta.CreationTimestamp.Time.loc.tx {
+			a := &in.ObjectMeta.CreationTimestamp.Time.loc.tx[i]
+		}
+		if in.ObjectMeta.CreationTimestamp.Time.loc.cacheZone != nil {
+		}
+	}
+	if in.ObjectMeta.DeletionTimestamp != nil {
+	}
+	if in.ObjectMeta.DeletionGracePeriodSeconds != nil {
+	}
+	for i := range in.ObjectMeta.OwnerReferences {
+		a := &in.ObjectMeta.OwnerReferences[i]
+		if a.Controller != nil {
+		}
+	}
+	if in.ObjectMeta.Initializers != nil {
+		for i := range in.ObjectMeta.Initializers.Pending {
+			a := &in.ObjectMeta.Initializers.Pending[i]
+		}
+		if in.ObjectMeta.Initializers.Result != nil {
+			if in.ObjectMeta.Initializers.Result.Details != nil {
+				for i := range in.ObjectMeta.Initializers.Result.Details.Causes {
+					a := &in.ObjectMeta.Initializers.Result.Details.Causes[i]
+				}
+			}
+		}
+	}
+	for i := range in.ObjectMeta.Finalizers {
+		a := &in.ObjectMeta.Finalizers[i]
+	}
+	for i := range in.Secrets {
+		a := &in.Secrets[i]
+	}
+	for i := range in.ImagePullSecrets {
+		a := &in.ImagePullSecrets[i]
+	}
+}
+
+func SetObjectDefaults_ServiceAccountList(in *ServiceAccountList) {
+	for i := range in.Items {
+		a := &in.Items[i]
+		SetObjectDefaults_ServiceAccount(a)
+	}
 }
 
 func SetObjectDefaults_ServiceList(in *ServiceList) {
@@ -628,4 +1725,7 @@ func SetObjectDefaults_ServiceList(in *ServiceList) {
 		a := &in.Items[i]
 		SetObjectDefaults_Service(a)
 	}
+}
+
+func SetObjectDefaults_ServiceProxyOptions(in *ServiceProxyOptions) {
 }

@@ -28,5 +28,102 @@ import (
 // Public to allow building arbitrary schemes.
 // All generated defaulters are covering - they call all nested defaulters.
 func RegisterDefaults(scheme *runtime.Scheme) error {
+	scheme.AddTypeDefaultingFunc(&Eviction{}, func(obj interface{}) { SetObjectDefaults_Eviction(obj.(*Eviction)) })
+	scheme.AddTypeDefaultingFunc(&PodDisruptionBudget{}, func(obj interface{}) { SetObjectDefaults_PodDisruptionBudget(obj.(*PodDisruptionBudget)) })
+	scheme.AddTypeDefaultingFunc(&PodDisruptionBudgetList{}, func(obj interface{}) { SetObjectDefaults_PodDisruptionBudgetList(obj.(*PodDisruptionBudgetList)) })
 	return nil
+}
+
+func SetObjectDefaults_Eviction(in *Eviction) {
+	if in.ObjectMeta.CreationTimestamp.Time.loc != nil {
+		for i := range in.ObjectMeta.CreationTimestamp.Time.loc.zone {
+			a := &in.ObjectMeta.CreationTimestamp.Time.loc.zone[i]
+		}
+		for i := range in.ObjectMeta.CreationTimestamp.Time.loc.tx {
+			a := &in.ObjectMeta.CreationTimestamp.Time.loc.tx[i]
+		}
+		if in.ObjectMeta.CreationTimestamp.Time.loc.cacheZone != nil {
+		}
+	}
+	if in.ObjectMeta.DeletionTimestamp != nil {
+	}
+	if in.ObjectMeta.DeletionGracePeriodSeconds != nil {
+	}
+	for i := range in.ObjectMeta.OwnerReferences {
+		a := &in.ObjectMeta.OwnerReferences[i]
+		if a.Controller != nil {
+		}
+	}
+	if in.ObjectMeta.Initializers != nil {
+		for i := range in.ObjectMeta.Initializers.Pending {
+			a := &in.ObjectMeta.Initializers.Pending[i]
+		}
+		if in.ObjectMeta.Initializers.Result != nil {
+			if in.ObjectMeta.Initializers.Result.Details != nil {
+				for i := range in.ObjectMeta.Initializers.Result.Details.Causes {
+					a := &in.ObjectMeta.Initializers.Result.Details.Causes[i]
+				}
+			}
+		}
+	}
+	for i := range in.ObjectMeta.Finalizers {
+		a := &in.ObjectMeta.Finalizers[i]
+	}
+	if in.DeleteOptions != nil {
+		if in.DeleteOptions.Preconditions != nil {
+			if in.DeleteOptions.Preconditions.UID != nil {
+			}
+		}
+		if in.DeleteOptions.PropagationPolicy != nil {
+		}
+	}
+}
+
+func SetObjectDefaults_PodDisruptionBudget(in *PodDisruptionBudget) {
+	if in.ObjectMeta.CreationTimestamp.Time.loc != nil {
+		for i := range in.ObjectMeta.CreationTimestamp.Time.loc.zone {
+			a := &in.ObjectMeta.CreationTimestamp.Time.loc.zone[i]
+		}
+		for i := range in.ObjectMeta.CreationTimestamp.Time.loc.tx {
+			a := &in.ObjectMeta.CreationTimestamp.Time.loc.tx[i]
+		}
+		if in.ObjectMeta.CreationTimestamp.Time.loc.cacheZone != nil {
+		}
+	}
+	if in.ObjectMeta.DeletionTimestamp != nil {
+	}
+	if in.ObjectMeta.DeletionGracePeriodSeconds != nil {
+	}
+	for i := range in.ObjectMeta.OwnerReferences {
+		a := &in.ObjectMeta.OwnerReferences[i]
+		if a.Controller != nil {
+		}
+	}
+	if in.ObjectMeta.Initializers != nil {
+		for i := range in.ObjectMeta.Initializers.Pending {
+			a := &in.ObjectMeta.Initializers.Pending[i]
+		}
+		if in.ObjectMeta.Initializers.Result != nil {
+			if in.ObjectMeta.Initializers.Result.Details != nil {
+				for i := range in.ObjectMeta.Initializers.Result.Details.Causes {
+					a := &in.ObjectMeta.Initializers.Result.Details.Causes[i]
+				}
+			}
+		}
+	}
+	for i := range in.ObjectMeta.Finalizers {
+		a := &in.ObjectMeta.Finalizers[i]
+	}
+	if in.Spec.Selector != nil {
+		for i := range in.Spec.Selector.MatchExpressions {
+			a := &in.Spec.Selector.MatchExpressions[i]
+		}
+	}
+}
+
+func SetObjectDefaults_PodDisruptionBudgetList(in *PodDisruptionBudgetList) {
+	for i := range in.Items {
+		a := &in.Items[i]
+		SetObjectDefaults_PodDisruptionBudget(a)
+	}
 }
