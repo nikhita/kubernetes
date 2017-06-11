@@ -18,6 +18,11 @@ package v1beta1
 
 import metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+// TODO: This does not generate to protobuf because of the interface{} - fix protobuf
+// generation to support a meta type that can accept any valid JSON.
+
+// +protobuf=false
+
 // CustomResourceDefinitionSpec describes how a user wants their resource to appear
 type CustomResourceDefinitionSpec struct {
 	// Group is the group this resource belongs in
@@ -26,9 +31,12 @@ type CustomResourceDefinitionSpec struct {
 	Version string `json:"version" protobuf:"bytes,2,opt,name=version"`
 	// Names are the names used to describe this custom resource
 	Names CustomResourceDefinitionNames `json:"names" protobuf:"bytes,3,opt,name=names"`
-
 	// Scope indicates whether this resource is cluster or namespace scoped.  Default is namespaced
 	Scope ResourceScope `json:"scope" protobuf:"bytes,4,opt,name=scope,casttype=ResourceScope"`
+	// Validation describes the validation methods for CustomResources
+	// This field is alpha-level and should only be sent to servers that enable the CustomResourceValidation feature.
+	// +optional
+	Validation CustomResourceValidation `json:"validation,omitempty"`
 }
 
 // CustomResourceDefinitionNames indicates the names to serve this CustomResourceDefinition
@@ -138,4 +146,89 @@ type CustomResourceDefinitionList struct {
 
 	// Items individual CustomResourceDefinitions
 	Items []CustomResourceDefinition `json:"items" protobuf:"bytes,2,rep,name=items"`
+}
+
+// CustomResourceValidation is a list of validation methods for CustomResources.
+type CustomResourceValidation struct {
+	// OpenAPIV3Schema is the OpenAPI v3 schema to be validated against.
+	OpenAPIV3Schema *JSONSchemaProps `json:"openAPIV3Schema,omitempty"`
+}
+
+// JSONSchemaProps is a JSON-Schema following Specification Draft 4 (http://json-schema.org/).
+type JSONSchemaProps struct {
+	ID                   string                     `json:"id,omitempty"`
+	Schema               JSONSchemaURL              `json:"$schema,omitempty"`
+	Ref                  *string                    `json:"$ref,omitempty"`
+	Description          string                     `json:"description,omitempty"`
+	Type                 StringOrArray              `json:"type,omitempty"`
+	Format               string                     `json:"format,omitempty"`
+	Title                string                     `json:"title,omitempty"`
+	Default              interface{}                `json:"default,omitempty"`
+	Maximum              *float64                   `json:"maximum,omitempty"`
+	ExclusiveMaximum     bool                       `json:"exclusiveMaximum,omitempty"`
+	Minimum              *float64                   `json:"minimum,omitempty"`
+	ExclusiveMinimum     bool                       `json:"exclusiveMinimum,omitempty"`
+	MaxLength            *int64                     `json:"maxLength,omitempty"`
+	MinLength            *int64                     `json:"minLength,omitempty"`
+	Pattern              string                     `json:"pattern,omitempty"`
+	MaxItems             *int64                     `json:"maxItems,omitempty"`
+	MinItems             *int64                     `json:"minItems,omitempty"`
+	UniqueItems          bool                       `json:"uniqueItems,omitempty"`
+	MultipleOf           *float64                   `json:"multipleOf,omitempty"`
+	Enum                 []interface{}              `json:"enum,omitempty"`
+	MaxProperties        *int64                     `json:"maxProperties,omitempty"`
+	MinProperties        *int64                     `json:"minProperties,omitempty"`
+	Required             []string                   `json:"required,omitempty"`
+	Items                *JSONSchemaPropsOrArray    `json:"items,omitempty"`
+	AllOf                []JSONSchemaProps          `json:"allOf,omitempty"`
+	OneOf                []JSONSchemaProps          `json:"oneOf,omitempty"`
+	AnyOf                []JSONSchemaProps          `json:"anyOf,omitempty"`
+	Not                  *JSONSchemaProps           `json:"not,omitempty"`
+	Properties           map[string]JSONSchemaProps `json:"properties,omitempty"`
+	AdditionalProperties *JSONSchemaPropsOrBool     `json:"additionalProperties,omitempty"`
+	PatternProperties    map[string]JSONSchemaProps `json:"patternProperties,omitempty"`
+	Dependencies         JSONSchemaDependencies     `json:"dependencies,omitempty"`
+	AdditionalItems      *JSONSchemaPropsOrBool     `json:"additionalItems,omitempty"`
+	Definitions          JSONSchemaDefinitions      `json:"definitions,omitempty"`
+	ExternalDocs         *ExternalDocumentation     `json:"externalDocs,omitempty"`
+	Example              interface{}                `json:"example,omitempty"`
+}
+
+// JSONSchemaURL represents a schema url.
+type JSONSchemaURL string
+
+// StringOrArray represents a value that can either be a string or an array of strings.
+// Mainly here for serialization purposes.
+type StringOrArray []string
+
+// JSONSchemaPropsOrArray represents a value that can either be a JSONSchemaProps
+// or an array of JSONSchemaProps. Mainly here for serialization purposes.
+type JSONSchemaPropsOrArray struct {
+	Schema      *JSONSchemaProps
+	JSONSchemas []JSONSchemaProps
+}
+
+// JSONSchemaPropsOrBool represents JSONSchemaProps or a boolean value.
+// Defaults to true for the boolean property.
+type JSONSchemaPropsOrBool struct {
+	Allows bool
+	Schema *JSONSchemaProps
+}
+
+// JSONSchemaDependencies represent a dependencies property.
+type JSONSchemaDependencies map[string]JSONSchemaPropsOrStringArray
+
+// JSONSchemaPropsOrStringArray represents a JSONSchemaProps or a string array.
+type JSONSchemaPropsOrStringArray struct {
+	Schema   *JSONSchemaProps
+	Property []string
+}
+
+// JSONSchemaDefinitions contains the models explicitly defined in this spec.
+type JSONSchemaDefinitions map[string]JSONSchemaProps
+
+// ExternalDocumentation allows referencing an external resource for extended documentation.
+type ExternalDocumentation struct {
+	Description string `json:"description,omitempty"`
+	URL         string `json:"url,omitempty"`
 }
