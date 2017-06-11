@@ -16,7 +16,11 @@ limitations under the License.
 
 package apiextensions
 
-import metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+import (
+	"net/url"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+)
 
 // CustomResourceDefinitionSpec describes how a user wants their resource to appear
 type CustomResourceDefinitionSpec struct {
@@ -26,9 +30,10 @@ type CustomResourceDefinitionSpec struct {
 	Version string
 	// Names are the names used to describe this custom resource
 	Names CustomResourceDefinitionNames
-
 	// Scope indicates whether this resource is cluster or namespace scoped.  Default is namespaced
 	Scope ResourceScope
+	// Validation describes the validation methods for CustomResources
+	Validation *CustomResourceValidation `json:"validation,omitempty"`
 }
 
 // CustomResourceDefinitionNames indicates the names to serve this CustomResourceDefinition
@@ -136,3 +141,105 @@ type CustomResourceDefinitionList struct {
 	// Items individual CustomResourceDefinitions
 	Items []CustomResourceDefinition
 }
+
+// CustomResourceValidation is a list of validation methods for CustomResources
+type CustomResourceValidation struct {
+	// JSONSchema is the JSON Schema to be validated against.
+	// Can add other validation methods later if needed.
+	JSONSchema *JSONSchemaProps `json:"jsonSchema,omitempty"`
+}
+
+// JSONSchemaProps is a JSON-Schema following Specification Draft 4 (http://json-schema.org/).
+type JSONSchemaProps struct {
+	ID               string        `json:"id,omitempty"`
+	Schema           JSONSchemaURL `json:"-,omitempty"`
+	Ref              JSONSchemaRef `json:"-,omitempty"`
+	Description      string        `json:"description,omitempty"`
+	Type             StringOrArray `json:"type,omitempty"`
+	Format           string        `json:"format,omitempty"`
+	Title            string        `json:"title,omitempty"`
+	Default          interface{}   `json:"default,omitempty"`
+	Maximum          *float64      `json:"maximum,omitempty"`
+	ExclusiveMaximum bool          `json:"exclusiveMaximum,omitempty"`
+	Minimum          *float64      `json:"minimum,omitempty"`
+	ExclusiveMinimum bool          `json:"exclusiveMinimum,omitempty"`
+	MaxLength        *int64        `json:"maxLength,omitempty"`
+	MinLength        *int64        `json:"minLength,omitempty"`
+	Pattern          string        `json:"pattern,omitempty"`
+	MaxItems         *int64        `json:"maxItems,omitempty"`
+	MinItems         *int64        `json:"minItems,omitempty"`
+	// disable uniqueItems for now because it can cause the validation runtime
+	// complexity to become quadratic.
+	UniqueItems          bool                       `json:"uniqueItems,omitempty"`
+	MultipleOf           *float64                   `json:"multipleOf,omitempty"`
+	Enum                 []interface{}              `json:"enum,omitempty"`
+	MaxProperties        *int64                     `json:"maxProperties,omitempty"`
+	MinProperties        *int64                     `json:"minProperties,omitempty"`
+	Required             []string                   `json:"required,omitempty"`
+	Items                *JSONSchemaPropsOrArray    `json:"items,omitempty"`
+	AllOf                []JSONSchemaProps          `json:"allOf,omitempty"`
+	OneOf                []JSONSchemaProps          `json:"oneOf,omitempty"`
+	AnyOf                []JSONSchemaProps          `json:"anyOf,omitempty"`
+	Not                  *JSONSchemaProps           `json:"not,omitempty"`
+	Properties           map[string]JSONSchemaProps `json:"properties,omitempty"`
+	AdditionalProperties *JSONSchemaPropsOrBool     `json:"additionalProperties,omitempty"`
+	PatternProperties    map[string]JSONSchemaProps `json:"patternProperties,omitempty"`
+	Dependencies         JSONSchemaDependencies     `json:"dependencies,omitempty"`
+	AdditionalItems      *JSONSchemaPropsOrBool     `json:"additionalItems,omitempty"`
+	Definitions          JSONSchemaDefinitions      `json:"definitions,omitempty"`
+}
+
+// JSONSchemaRef represents a JSON reference that is potentially resolved.
+// It is marshaled into a string using a custom JSON marshaller.
+type JSONSchemaRef struct {
+	ReferenceURL     *url.URL
+	ReferencePointer JSONSchemaPointer
+	HasFullURL       bool
+	HasURLPathOnly   bool
+	HasFragmentOnly  bool
+	HasFileScheme    bool
+	HasFullFilePath  bool
+}
+
+// JSONSchemaPointer is the JSON pointer representation.
+type JSONSchemaPointer struct {
+	ReferenceTokens []string
+}
+
+// JSONSchemaURL represents a schema url. Defaults to JSON Schema Specification Draft 4.
+type JSONSchemaURL string
+
+const (
+	// JSONSchemaDraft4URL is the url for JSON Schema Specification Draft 4.
+	JSONSchemaDraft4URL JSONSchemaURL = "http://json-schema.org/draft-04/schema#"
+)
+
+// StringOrArray represents a value that can either be a string or an array of strings.
+// Mainly here for serialization purposes.
+type StringOrArray []string
+
+// JSONSchemaPropsOrArray represents a value that can either be a JSONSchemaProps
+// or an array of JSONSchemaProps. Mainly here for serialization purposes.
+type JSONSchemaPropsOrArray struct {
+	Schema      *JSONSchemaProps
+	JSONSchemas []JSONSchemaProps
+}
+
+// JSONSchemaPropsOrBool represents JSONSchemaProps or a boolean value.
+// Defaults to true for the boolean property.
+type JSONSchemaPropsOrBool struct {
+	Allows bool
+	Schema *JSONSchemaProps
+}
+
+// JSONSchemaDependencies represent a dependencies property.
+type JSONSchemaDependencies map[string]JSONSchemaPropsOrStringArray
+
+// JSONSchemaPropsOrStringArray represents a JSONSchemaProps or a string array.
+type JSONSchemaPropsOrStringArray struct {
+	Schema   *JSONSchemaProps
+	Property []string
+}
+
+// JSONSchemaDefinitions contains the models explicitly defined in this spec.
+type JSONSchemaDefinitions map[string]JSONSchemaProps
