@@ -37,6 +37,67 @@ func RegisterDefaults(scheme *runtime.Scheme) error {
 
 func SetObjectDefaults_HorizontalPodAutoscaler(in *HorizontalPodAutoscaler) {
 	SetDefaults_HorizontalPodAutoscaler(in)
+	if in.ObjectMeta.CreationTimestamp.Time.loc != nil {
+		for i := range in.ObjectMeta.CreationTimestamp.Time.loc.zone {
+			a := &in.ObjectMeta.CreationTimestamp.Time.loc.zone[i]
+		}
+		for i := range in.ObjectMeta.CreationTimestamp.Time.loc.tx {
+			a := &in.ObjectMeta.CreationTimestamp.Time.loc.tx[i]
+		}
+		if in.ObjectMeta.CreationTimestamp.Time.loc.cacheZone != nil {
+		}
+	}
+	if in.ObjectMeta.DeletionTimestamp != nil {
+	}
+	if in.ObjectMeta.DeletionGracePeriodSeconds != nil {
+	}
+	for i := range in.ObjectMeta.OwnerReferences {
+		a := &in.ObjectMeta.OwnerReferences[i]
+		if a.Controller != nil {
+		}
+	}
+	if in.ObjectMeta.Initializers != nil {
+		for i := range in.ObjectMeta.Initializers.Pending {
+			a := &in.ObjectMeta.Initializers.Pending[i]
+		}
+		if in.ObjectMeta.Initializers.Result != nil {
+			if in.ObjectMeta.Initializers.Result.Details != nil {
+				for i := range in.ObjectMeta.Initializers.Result.Details.Causes {
+					a := &in.ObjectMeta.Initializers.Result.Details.Causes[i]
+				}
+			}
+		}
+	}
+	for i := range in.ObjectMeta.Finalizers {
+		a := &in.ObjectMeta.Finalizers[i]
+	}
+	if in.Spec.MinReplicas != nil {
+	}
+	for i := range in.Spec.Metrics {
+		a := &in.Spec.Metrics[i]
+		if a.Object != nil {
+			if a.Object.TargetValue.d.Dec != nil {
+			}
+		}
+		if a.Pods != nil {
+		}
+		if a.Resource != nil {
+			if a.Resource.TargetAverageValue != nil {
+			}
+		}
+	}
+	for i := range in.Status.CurrentMetrics {
+		a := &in.Status.CurrentMetrics[i]
+		if a.Object != nil {
+		}
+		if a.Pods != nil {
+		}
+		if a.Resource != nil {
+		}
+	}
+	for i := range in.Status.Conditions {
+		a := &in.Status.Conditions[i]
+	}
 }
 
 func SetObjectDefaults_HorizontalPodAutoscalerList(in *HorizontalPodAutoscalerList) {

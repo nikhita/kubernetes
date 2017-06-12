@@ -45,4 +45,24 @@ func SetObjectDefaults_KubeSchedulerConfiguration(in *KubeSchedulerConfiguration
 
 func SetObjectDefaults_KubeletConfiguration(in *KubeletConfiguration) {
 	SetDefaults_KubeletConfiguration(in)
+	for i := range in.HostNetworkSources {
+		a := &in.HostNetworkSources[i]
+	}
+	if in.RegistryPullQPS != nil {
+	}
+	if in.LockFilePath != nil {
+	}
+	for i := range in.RegisterWithTaints {
+		a := &in.RegisterWithTaints[i]
+		if a.TimeAdded.Time.loc != nil {
+			for j := range a.TimeAdded.Time.loc.zone {
+				b := &a.TimeAdded.Time.loc.zone[j]
+			}
+			for j := range a.TimeAdded.Time.loc.tx {
+				b := &a.TimeAdded.Time.loc.tx[j]
+			}
+			if a.TimeAdded.Time.loc.cacheZone != nil {
+			}
+		}
+	}
 }

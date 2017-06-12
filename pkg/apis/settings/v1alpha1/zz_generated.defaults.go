@@ -35,58 +35,157 @@ func RegisterDefaults(scheme *runtime.Scheme) error {
 }
 
 func SetObjectDefaults_PodPreset(in *PodPreset) {
+	if in.ObjectMeta.CreationTimestamp.Time.loc != nil {
+		for i := range in.ObjectMeta.CreationTimestamp.Time.loc.zone {
+			a := &in.ObjectMeta.CreationTimestamp.Time.loc.zone[i]
+		}
+		for i := range in.ObjectMeta.CreationTimestamp.Time.loc.tx {
+			a := &in.ObjectMeta.CreationTimestamp.Time.loc.tx[i]
+		}
+		if in.ObjectMeta.CreationTimestamp.Time.loc.cacheZone != nil {
+		}
+	}
+	if in.ObjectMeta.DeletionTimestamp != nil {
+	}
+	if in.ObjectMeta.DeletionGracePeriodSeconds != nil {
+	}
+	for i := range in.ObjectMeta.OwnerReferences {
+		a := &in.ObjectMeta.OwnerReferences[i]
+		if a.Controller != nil {
+		}
+	}
+	if in.ObjectMeta.Initializers != nil {
+		for i := range in.ObjectMeta.Initializers.Pending {
+			a := &in.ObjectMeta.Initializers.Pending[i]
+		}
+		if in.ObjectMeta.Initializers.Result != nil {
+			if in.ObjectMeta.Initializers.Result.Details != nil {
+				for i := range in.ObjectMeta.Initializers.Result.Details.Causes {
+					a := &in.ObjectMeta.Initializers.Result.Details.Causes[i]
+				}
+			}
+		}
+	}
+	for i := range in.ObjectMeta.Finalizers {
+		a := &in.ObjectMeta.Finalizers[i]
+	}
+	for i := range in.Spec.Selector.MatchExpressions {
+		a := &in.Spec.Selector.MatchExpressions[i]
+	}
 	for i := range in.Spec.Env {
 		a := &in.Spec.Env[i]
 		if a.ValueFrom != nil {
 			if a.ValueFrom.FieldRef != nil {
 				v1.SetDefaults_ObjectFieldSelector(a.ValueFrom.FieldRef)
 			}
+			if a.ValueFrom.ResourceFieldRef != nil {
+				if a.ValueFrom.ResourceFieldRef.Divisor.d.Dec != nil {
+				}
+			}
+			if a.ValueFrom.ConfigMapKeyRef != nil {
+			}
+			if a.ValueFrom.SecretKeyRef != nil {
+			}
+		}
+	}
+	for i := range in.Spec.EnvFrom {
+		a := &in.Spec.EnvFrom[i]
+		if a.ConfigMapRef != nil {
+		}
+		if a.SecretRef != nil {
 		}
 	}
 	for i := range in.Spec.Volumes {
 		a := &in.Spec.Volumes[i]
 		v1.SetDefaults_Volume(a)
+		if a.VolumeSource.HostPath != nil {
+		}
+		if a.VolumeSource.EmptyDir != nil {
+		}
+		if a.VolumeSource.GCEPersistentDisk != nil {
+		}
+		if a.VolumeSource.AWSElasticBlockStore != nil {
+		}
+		if a.VolumeSource.GitRepo != nil {
+		}
 		if a.VolumeSource.Secret != nil {
 			v1.SetDefaults_SecretVolumeSource(a.VolumeSource.Secret)
+			for j := range a.VolumeSource.Secret.Items {
+				b := &a.VolumeSource.Secret.Items[j]
+				if b.Mode != nil {
+				}
+			}
+		}
+		if a.VolumeSource.NFS != nil {
 		}
 		if a.VolumeSource.ISCSI != nil {
 			v1.SetDefaults_ISCSIVolumeSource(a.VolumeSource.ISCSI)
+			if a.VolumeSource.ISCSI.SecretRef != nil {
+			}
+		}
+		if a.VolumeSource.Glusterfs != nil {
+		}
+		if a.VolumeSource.PersistentVolumeClaim != nil {
 		}
 		if a.VolumeSource.RBD != nil {
 			v1.SetDefaults_RBDVolumeSource(a.VolumeSource.RBD)
+		}
+		if a.VolumeSource.FlexVolume != nil {
+		}
+		if a.VolumeSource.Cinder != nil {
+		}
+		if a.VolumeSource.CephFS != nil {
+		}
+		if a.VolumeSource.Flocker != nil {
 		}
 		if a.VolumeSource.DownwardAPI != nil {
 			v1.SetDefaults_DownwardAPIVolumeSource(a.VolumeSource.DownwardAPI)
 			for j := range a.VolumeSource.DownwardAPI.Items {
 				b := &a.VolumeSource.DownwardAPI.Items[j]
-				if b.FieldRef != nil {
-					v1.SetDefaults_ObjectFieldSelector(b.FieldRef)
-				}
 			}
+		}
+		if a.VolumeSource.FC != nil {
+		}
+		if a.VolumeSource.AzureFile != nil {
 		}
 		if a.VolumeSource.ConfigMap != nil {
 			v1.SetDefaults_ConfigMapVolumeSource(a.VolumeSource.ConfigMap)
 		}
+		if a.VolumeSource.VsphereVolume != nil {
+		}
+		if a.VolumeSource.Quobyte != nil {
+		}
 		if a.VolumeSource.AzureDisk != nil {
 			v1.SetDefaults_AzureDiskVolumeSource(a.VolumeSource.AzureDisk)
+			if a.VolumeSource.AzureDisk.CachingMode != nil {
+			}
+			if a.VolumeSource.AzureDisk.FSType != nil {
+			}
+			if a.VolumeSource.AzureDisk.Kind != nil {
+			}
+		}
+		if a.VolumeSource.PhotonPersistentDisk != nil {
 		}
 		if a.VolumeSource.Projected != nil {
 			v1.SetDefaults_ProjectedVolumeSource(a.VolumeSource.Projected)
 			for j := range a.VolumeSource.Projected.Sources {
 				b := &a.VolumeSource.Projected.Sources[j]
+				if b.Secret != nil {
+				}
 				if b.DownwardAPI != nil {
-					for k := range b.DownwardAPI.Items {
-						c := &b.DownwardAPI.Items[k]
-						if c.FieldRef != nil {
-							v1.SetDefaults_ObjectFieldSelector(c.FieldRef)
-						}
-					}
+				}
+				if b.ConfigMap != nil {
 				}
 			}
+		}
+		if a.VolumeSource.PortworxVolume != nil {
 		}
 		if a.VolumeSource.ScaleIO != nil {
 			v1.SetDefaults_ScaleIOVolumeSource(a.VolumeSource.ScaleIO)
 		}
+	}
+	for i := range in.Spec.VolumeMounts {
+		a := &in.Spec.VolumeMounts[i]
 	}
 }
 

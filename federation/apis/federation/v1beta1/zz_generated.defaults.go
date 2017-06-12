@@ -28,5 +28,59 @@ import (
 // Public to allow building arbitrary schemes.
 // All generated defaulters are covering - they call all nested defaulters.
 func RegisterDefaults(scheme *runtime.Scheme) error {
+	scheme.AddTypeDefaultingFunc(&Cluster{}, func(obj interface{}) { SetObjectDefaults_Cluster(obj.(*Cluster)) })
+	scheme.AddTypeDefaultingFunc(&ClusterList{}, func(obj interface{}) { SetObjectDefaults_ClusterList(obj.(*ClusterList)) })
 	return nil
+}
+
+func SetObjectDefaults_Cluster(in *Cluster) {
+	if in.ObjectMeta.CreationTimestamp.Time.loc != nil {
+		for i := range in.ObjectMeta.CreationTimestamp.Time.loc.zone {
+			a := &in.ObjectMeta.CreationTimestamp.Time.loc.zone[i]
+		}
+		for i := range in.ObjectMeta.CreationTimestamp.Time.loc.tx {
+			a := &in.ObjectMeta.CreationTimestamp.Time.loc.tx[i]
+		}
+		if in.ObjectMeta.CreationTimestamp.Time.loc.cacheZone != nil {
+		}
+	}
+	if in.ObjectMeta.DeletionTimestamp != nil {
+	}
+	if in.ObjectMeta.DeletionGracePeriodSeconds != nil {
+	}
+	for i := range in.ObjectMeta.OwnerReferences {
+		a := &in.ObjectMeta.OwnerReferences[i]
+		if a.Controller != nil {
+		}
+	}
+	if in.ObjectMeta.Initializers != nil {
+		for i := range in.ObjectMeta.Initializers.Pending {
+			a := &in.ObjectMeta.Initializers.Pending[i]
+		}
+		if in.ObjectMeta.Initializers.Result != nil {
+			if in.ObjectMeta.Initializers.Result.Details != nil {
+				for i := range in.ObjectMeta.Initializers.Result.Details.Causes {
+					a := &in.ObjectMeta.Initializers.Result.Details.Causes[i]
+				}
+			}
+		}
+	}
+	for i := range in.ObjectMeta.Finalizers {
+		a := &in.ObjectMeta.Finalizers[i]
+	}
+	for i := range in.Spec.ServerAddressByClientCIDRs {
+		a := &in.Spec.ServerAddressByClientCIDRs[i]
+	}
+	if in.Spec.SecretRef != nil {
+	}
+	for i := range in.Status.Conditions {
+		a := &in.Status.Conditions[i]
+	}
+}
+
+func SetObjectDefaults_ClusterList(in *ClusterList) {
+	for i := range in.Items {
+		a := &in.Items[i]
+		SetObjectDefaults_Cluster(a)
+	}
 }

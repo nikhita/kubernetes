@@ -28,5 +28,19 @@ import (
 // Public to allow building arbitrary schemes.
 // All generated defaulters are covering - they call all nested defaulters.
 func RegisterDefaults(scheme *runtime.Scheme) error {
+	scheme.AddTypeDefaultingFunc(&AdmissionReview{}, func(obj interface{}) { SetObjectDefaults_AdmissionReview(obj.(*AdmissionReview)) })
 	return nil
+}
+
+func SetObjectDefaults_AdmissionReview(in *AdmissionReview) {
+	for i := range in.Spec.UserInfo.Groups {
+		a := &in.Spec.UserInfo.Groups[i]
+	}
+	if in.Status.Result != nil {
+		if in.Status.Result.Details != nil {
+			for i := range in.Status.Result.Details.Causes {
+				a := &in.Status.Result.Details.Causes[i]
+			}
+		}
+	}
 }

@@ -28,5 +28,131 @@ import (
 // Public to allow building arbitrary schemes.
 // All generated defaulters are covering - they call all nested defaulters.
 func RegisterDefaults(scheme *runtime.Scheme) error {
+	scheme.AddTypeDefaultingFunc(&LocalSubjectAccessReview{}, func(obj interface{}) { SetObjectDefaults_LocalSubjectAccessReview(obj.(*LocalSubjectAccessReview)) })
+	scheme.AddTypeDefaultingFunc(&SelfSubjectAccessReview{}, func(obj interface{}) { SetObjectDefaults_SelfSubjectAccessReview(obj.(*SelfSubjectAccessReview)) })
+	scheme.AddTypeDefaultingFunc(&SubjectAccessReview{}, func(obj interface{}) { SetObjectDefaults_SubjectAccessReview(obj.(*SubjectAccessReview)) })
 	return nil
+}
+
+func SetObjectDefaults_LocalSubjectAccessReview(in *LocalSubjectAccessReview) {
+	if in.ObjectMeta.CreationTimestamp.Time.loc != nil {
+		for i := range in.ObjectMeta.CreationTimestamp.Time.loc.zone {
+			a := &in.ObjectMeta.CreationTimestamp.Time.loc.zone[i]
+		}
+		for i := range in.ObjectMeta.CreationTimestamp.Time.loc.tx {
+			a := &in.ObjectMeta.CreationTimestamp.Time.loc.tx[i]
+		}
+		if in.ObjectMeta.CreationTimestamp.Time.loc.cacheZone != nil {
+		}
+	}
+	if in.ObjectMeta.DeletionTimestamp != nil {
+	}
+	if in.ObjectMeta.DeletionGracePeriodSeconds != nil {
+	}
+	for i := range in.ObjectMeta.OwnerReferences {
+		a := &in.ObjectMeta.OwnerReferences[i]
+		if a.Controller != nil {
+		}
+	}
+	if in.ObjectMeta.Initializers != nil {
+		for i := range in.ObjectMeta.Initializers.Pending {
+			a := &in.ObjectMeta.Initializers.Pending[i]
+		}
+		if in.ObjectMeta.Initializers.Result != nil {
+			if in.ObjectMeta.Initializers.Result.Details != nil {
+				for i := range in.ObjectMeta.Initializers.Result.Details.Causes {
+					a := &in.ObjectMeta.Initializers.Result.Details.Causes[i]
+				}
+			}
+		}
+	}
+	for i := range in.ObjectMeta.Finalizers {
+		a := &in.ObjectMeta.Finalizers[i]
+	}
+	if in.Spec.ResourceAttributes != nil {
+	}
+	if in.Spec.NonResourceAttributes != nil {
+	}
+}
+
+func SetObjectDefaults_SelfSubjectAccessReview(in *SelfSubjectAccessReview) {
+	if in.ObjectMeta.CreationTimestamp.Time.loc != nil {
+		for i := range in.ObjectMeta.CreationTimestamp.Time.loc.zone {
+			a := &in.ObjectMeta.CreationTimestamp.Time.loc.zone[i]
+		}
+		for i := range in.ObjectMeta.CreationTimestamp.Time.loc.tx {
+			a := &in.ObjectMeta.CreationTimestamp.Time.loc.tx[i]
+		}
+		if in.ObjectMeta.CreationTimestamp.Time.loc.cacheZone != nil {
+		}
+	}
+	if in.ObjectMeta.DeletionTimestamp != nil {
+	}
+	if in.ObjectMeta.DeletionGracePeriodSeconds != nil {
+	}
+	for i := range in.ObjectMeta.OwnerReferences {
+		a := &in.ObjectMeta.OwnerReferences[i]
+		if a.Controller != nil {
+		}
+	}
+	if in.ObjectMeta.Initializers != nil {
+		for i := range in.ObjectMeta.Initializers.Pending {
+			a := &in.ObjectMeta.Initializers.Pending[i]
+		}
+		if in.ObjectMeta.Initializers.Result != nil {
+			if in.ObjectMeta.Initializers.Result.Details != nil {
+				for i := range in.ObjectMeta.Initializers.Result.Details.Causes {
+					a := &in.ObjectMeta.Initializers.Result.Details.Causes[i]
+				}
+			}
+		}
+	}
+	for i := range in.ObjectMeta.Finalizers {
+		a := &in.ObjectMeta.Finalizers[i]
+	}
+	if in.Spec.ResourceAttributes != nil {
+	}
+	if in.Spec.NonResourceAttributes != nil {
+	}
+}
+
+func SetObjectDefaults_SubjectAccessReview(in *SubjectAccessReview) {
+	if in.ObjectMeta.CreationTimestamp.Time.loc != nil {
+		for i := range in.ObjectMeta.CreationTimestamp.Time.loc.zone {
+			a := &in.ObjectMeta.CreationTimestamp.Time.loc.zone[i]
+		}
+		for i := range in.ObjectMeta.CreationTimestamp.Time.loc.tx {
+			a := &in.ObjectMeta.CreationTimestamp.Time.loc.tx[i]
+		}
+		if in.ObjectMeta.CreationTimestamp.Time.loc.cacheZone != nil {
+		}
+	}
+	if in.ObjectMeta.DeletionTimestamp != nil {
+	}
+	if in.ObjectMeta.DeletionGracePeriodSeconds != nil {
+	}
+	for i := range in.ObjectMeta.OwnerReferences {
+		a := &in.ObjectMeta.OwnerReferences[i]
+		if a.Controller != nil {
+		}
+	}
+	if in.ObjectMeta.Initializers != nil {
+		for i := range in.ObjectMeta.Initializers.Pending {
+			a := &in.ObjectMeta.Initializers.Pending[i]
+		}
+		if in.ObjectMeta.Initializers.Result != nil {
+			if in.ObjectMeta.Initializers.Result.Details != nil {
+				for i := range in.ObjectMeta.Initializers.Result.Details.Causes {
+					a := &in.ObjectMeta.Initializers.Result.Details.Causes[i]
+				}
+			}
+		}
+	}
+	for i := range in.ObjectMeta.Finalizers {
+		a := &in.ObjectMeta.Finalizers[i]
+	}
+	if in.Spec.ResourceAttributes != nil {
+	}
+	if in.Spec.NonResourceAttributes != nil {
+	}
 }
