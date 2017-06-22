@@ -141,6 +141,78 @@ func NewCurletInstance(namespace, name string) *unstructured.Unstructured {
 	}
 }
 
+func NewNoxuValidationCRD(scope apiextensionsv1beta1.ResourceScope) *apiextensionsv1beta1.CustomResourceDefinition {
+	return &apiextensionsv1beta1.CustomResourceDefinition{
+		ObjectMeta: metav1.ObjectMeta{Name: "noxus.mygroup.example.com"},
+		Spec: apiextensionsv1beta1.CustomResourceDefinitionSpec{
+			Group:   "mygroup.example.com",
+			Version: "v1beta1",
+			Names: apiextensionsv1beta1.CustomResourceDefinitionNames{
+				Plural:     "noxus",
+				Singular:   "nonenglishnoxu",
+				Kind:       "WishIHadChosenNoxu",
+				ShortNames: []string{"foo", "bar", "abc", "def"},
+				ListKind:   "NoxuItemList",
+			},
+			Scope: apiextensionsv1beta1.NamespaceScoped,
+			Validation: &apiextensionsv1beta1.CustomResourceValidation{
+				JSONSchema: &apiextensionsv1beta1.JSONSchemaProps{
+					Required: []string{"alpha", "beta"},
+					Properties: map[string]apiextensionsv1beta1.JSONSchemaProps{
+						"alpha": {
+							Description: "Alpha is an alphanumeric string with underscores",
+							Type:        []string{"string"},
+							Pattern:     "^[a-zA-Z0-9_]*$",
+						},
+						"beta": {
+							Description: "Minimum value of beta is 10",
+							Type:        []string{"number"},
+							Minimum:     apiextensionsv1beta1.Float64Ptr(10),
+						},
+						"gamma": {
+							Description: "Gamma is restricted to foo, bar and baz",
+							Type:        []string{"string"},
+							Enum:        []interface{}{"foo", "bar", "baz"},
+						},
+						"delta": {
+							Description: "Delta is a string with a maximum length of 5 or a number with a minimum value of 0",
+							AnyOf: []apiextensionsv1beta1.JSONSchemaProps{
+								{
+									Type:      []string{"string"},
+									MaxLength: apiextensionsv1beta1.Int64Ptr(5),
+								},
+								{
+									Type:    []string{"number"},
+									Minimum: apiextensionsv1beta1.Float64Ptr(0),
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
+func NewNoxuValidationInstance(namespace, name string) *unstructured.Unstructured {
+	return &unstructured.Unstructured{
+		Object: map[string]interface{}{
+			"apiVersion": "mygroup.example.com/v1beta1",
+			"kind":       "WishIHadChosenNoxu",
+			"metadata": map[string]interface{}{
+				"namespace": namespace,
+				"name":      name,
+			},
+			"spec": map[string]interface{}{
+				"alpha": "foo_123",
+				"beta":  10,
+				"gamma": "bar",
+				"delta": "hello",
+			},
+		},
+	}
+}
+
 func CreateNewCustomResourceDefinition(crd *apiextensionsv1beta1.CustomResourceDefinition, apiExtensionsClient clientset.Interface, clientPool dynamic.ClientPool) (*dynamic.Client, error) {
 	_, err := apiExtensionsClient.Apiextensions().CustomResourceDefinitions().Create(crd)
 	if err != nil {
