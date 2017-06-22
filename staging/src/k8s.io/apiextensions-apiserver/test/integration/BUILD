@@ -27,6 +27,7 @@ go_test(
         "//vendor/k8s.io/apiextensions-apiserver/examples/client-go/apis/cr/v1:go_default_library",
         "//vendor/k8s.io/apiextensions-apiserver/examples/client-go/client:go_default_library",
         "//vendor/k8s.io/apiextensions-apiserver/examples/client-go/controller:go_default_library",
+        "//vendor/k8s.io/apiextensions-apiserver/pkg/apis/apiextensions:go_default_library",
         "//vendor/k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1:go_default_library",
         "//vendor/k8s.io/apiextensions-apiserver/pkg/apiserver:go_default_library",
         "//vendor/k8s.io/apiextensions-apiserver/test/integration/testserver:go_default_library",
