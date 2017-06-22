@@ -13,6 +13,7 @@ go_library(
         "defaults.go",
         "doc.go",
         "generated.pb.go",
+        "helpers.go",
         "register.go",
         "types.go",
         "zz_generated.conversion.go",
@@ -21,6 +22,7 @@ go_library(
     ],
     tags = ["automanaged"],
     deps = [
+        "//vendor/github.com/PuerkitoBio/purell:go_default_library",
         "//vendor/github.com/gogo/protobuf/proto:go_default_library",
         "//vendor/k8s.io/apiextensions-apiserver/pkg/apis/apiextensions:go_default_library",
         "//vendor/k8s.io/apimachinery/pkg/apis/meta/v1:go_default_library",

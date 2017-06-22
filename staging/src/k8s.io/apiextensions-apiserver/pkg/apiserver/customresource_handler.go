@@ -287,6 +287,7 @@ func (r *crdHandler) getServingInfoFor(crd *apiextensions.CustomResourceDefiniti
 		unstructuredTyper: discovery.NewUnstructuredObjectTyper(nil),
 	}
 	creator := unstructuredCreator{}
+
 	storage := customresource.NewREST(
 		schema.GroupResource{Group: crd.Spec.Group, Resource: crd.Spec.Names.Plural},
 		schema.GroupVersionKind{Group: crd.Spec.Group, Version: crd.Spec.Version, Kind: crd.Spec.Names.ListKind},
@@ -295,6 +296,7 @@ func (r *crdHandler) getServingInfoFor(crd *apiextensions.CustomResourceDefiniti
 			typer,
 			crd.Spec.Scope == apiextensions.NamespaceScoped,
 			kind,
+			*crd,
 		),
 		r.restOptionsGetter,
 	)
