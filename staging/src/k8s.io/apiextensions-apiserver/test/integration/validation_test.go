@@ -22,6 +22,7 @@ import (
 
 	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	"k8s.io/apiextensions-apiserver/test/integration/testserver"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
@@ -63,6 +64,169 @@ func TestForProperValidationErrors(t *testing.T) {
 				return instance
 			},
 			expectedError: `SomethingElse.mygroup.example.com "foo" is invalid: kind: Invalid value: "SomethingElse": must be WishIHadChosenNoxu`,
+		},
+	}
+
+	for _, tc := range tests {
+		_, err := noxuResourceClient.Create(tc.instanceFn())
+		if err == nil {
+			t.Errorf("%v: expected %v", tc.name, tc.expectedError)
+			continue
+		}
+		// this only works when status errors contain the expect kind and version, so this effectively tests serializations too
+		if !strings.Contains(err.Error(), tc.expectedError) {
+			t.Errorf("%v: expected %v, got %v", tc.name, tc.expectedError, err)
+			continue
+		}
+	}
+}
+
+func TestCustomResourceValidation(t *testing.T) {
+	stopCh, apiExtensionClient, clientPool, err := testserver.StartDefaultServer()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer close(stopCh)
+
+	noxuDefinition := testserver.NewNoxuValidationCRD(apiextensionsv1beta1.NamespaceScoped)
+	noxuVersionClient, err := testserver.CreateNewCustomResourceDefinition(noxuDefinition, apiExtensionClient, clientPool)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	ns := "not-the-default"
+	noxuResourceClient := NewNamespacedCustomResourceClient(ns, noxuVersionClient, noxuDefinition)
+	_, err = instantiateCustomResource(t, testserver.NewNoxuValidationInstance(ns, "foo"), noxuResourceClient, noxuDefinition)
+	if err != nil {
+		t.Fatalf("unable to create noxu Instance:%v", err)
+	}
+}
+
+func TestCustomResourceUpdateValidation(t *testing.T) {
+	stopCh, apiExtensionClient, clientPool, err := testserver.StartDefaultServer()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer close(stopCh)
+
+	noxuDefinition := testserver.NewNoxuValidationCRD(apiextensionsv1beta1.NamespaceScoped)
+	noxuVersionClient, err := testserver.CreateNewCustomResourceDefinition(noxuDefinition, apiExtensionClient, clientPool)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	ns := "not-the-default"
+	noxuResourceClient := NewNamespacedCustomResourceClient(ns, noxuVersionClient, noxuDefinition)
+	_, err = instantiateCustomResource(t, testserver.NewNoxuValidationInstance(ns, "foo"), noxuResourceClient, noxuDefinition)
+	if err != nil {
+		t.Fatalf("unable to create noxu Instance:%v", err)
+	}
+
+	gottenNoxuInstance, err := noxuResourceClient.Get("foo", metav1.GetOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// invalidate the instance
+	gottenNoxuInstance.Object["spec"] = map[string]interface{}{
+		"gamma": "bar",
+		"delta": "hello",
+	}
+
+	_, err = noxuResourceClient.Update(gottenNoxuInstance)
+	if err == nil {
+		t.Fatalf("unexpected non-error: spec.alpha and spec.beta are required while updating %v", gottenNoxuInstance)
+	}
+}
+
+func TestCustomResourceValidationErrors(t *testing.T) {
+	stopCh, apiExtensionClient, clientPool, err := testserver.StartDefaultServer()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer close(stopCh)
+
+	noxuDefinition := testserver.NewNoxuValidationCRD(apiextensionsv1beta1.NamespaceScoped)
+	noxuVersionClient, err := testserver.CreateNewCustomResourceDefinition(noxuDefinition, apiExtensionClient, clientPool)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	ns := "not-the-default"
+	noxuResourceClient := NewNamespacedCustomResourceClient(ns, noxuVersionClient, noxuDefinition)
+
+	tests := []struct {
+		name          string
+		instanceFn    func() *unstructured.Unstructured
+		expectedError string
+	}{
+		{
+			name: "bad alpha",
+			instanceFn: func() *unstructured.Unstructured {
+				instance := testserver.NewNoxuValidationInstance(ns, "foo")
+				instance.Object["spec"] = map[string]interface{}{
+					"alpha": "foo_123!",
+					"beta":  10,
+					"gamma": "bar",
+					"delta": "hello",
+				}
+				return instance
+			},
+			expectedError: "spec.alpha in body should match '^[a-zA-Z0-9_]*$'",
+		},
+		{
+			name: "bad beta",
+			instanceFn: func() *unstructured.Unstructured {
+				instance := testserver.NewNoxuValidationInstance(ns, "foo")
+				instance.Object["spec"] = map[string]interface{}{
+					"alpha": "foo_123",
+					"beta":  5,
+					"gamma": "bar",
+					"delta": "hello",
+				}
+				return instance
+			},
+			expectedError: "spec.beta in body should be greater than or equal to 10",
+		},
+		{
+			name: "bad gamma",
+			instanceFn: func() *unstructured.Unstructured {
+				instance := testserver.NewNoxuValidationInstance(ns, "foo")
+				instance.Object["spec"] = map[string]interface{}{
+					"alpha": "foo_123",
+					"beta":  5,
+					"gamma": "qux",
+					"delta": "hello",
+				}
+				return instance
+			},
+			expectedError: "spec.gamma in body should be one of [foo bar baz]",
+		},
+		{
+			name: "bad delta",
+			instanceFn: func() *unstructured.Unstructured {
+				instance := testserver.NewNoxuValidationInstance(ns, "foo")
+				instance.Object["spec"] = map[string]interface{}{
+					"alpha": "foo_123",
+					"beta":  5,
+					"gamma": "bar",
+					"delta": "foobarbaz",
+				}
+				return instance
+			},
+			expectedError: "must validate at least one schema (anyOf)\nspec.delta in body should be at most 5 chars long",
+		},
+		{
+			name: "absent alpha and beta",
+			instanceFn: func() *unstructured.Unstructured {
+				instance := testserver.NewNoxuValidationInstance(ns, "foo")
+				instance.Object["spec"] = map[string]interface{}{
+					"gamma": "bar",
+					"delta": "hello",
+				}
+				return instance
+			},
+			expectedError: "spec.alpha in body is required\nspec.beta in body is required",
 		},
 	}
 
