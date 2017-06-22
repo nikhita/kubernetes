@@ -13,6 +13,7 @@ go_library(
     srcs = ["validation.go"],
     tags = ["automanaged"],
     deps = [
+        "//vendor/github.com/go-openapi/spec:go_default_library",
         "//vendor/k8s.io/apiextensions-apiserver/pkg/apis/apiextensions:go_default_library",
         "//vendor/k8s.io/apimachinery/pkg/api/validation:go_default_library",
         "//vendor/k8s.io/apimachinery/pkg/util/validation:go_default_library",
