@@ -24,6 +24,7 @@ import (
 	"github.com/golang/glog"
 
 	"k8s.io/apiextensions-apiserver/pkg/apis/apiextensions"
+	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	apiextensionsserver "k8s.io/apiextensions-apiserver/pkg/apiserver"
 	apiextensionsclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/internalclientset/typed/apiextensions/internalversion"
 	"k8s.io/apiextensions-apiserver/pkg/registry/customresource"
@@ -255,13 +256,19 @@ func (m *ThirdPartyResourceServer) migrateThirdPartyResourceData(gvk schema.Grou
 		return false, nil
 	}
 
+	crdv1beta1 := apiextensionsv1beta1.CustomResourceDefinition{}
+	err = apiextensionsv1beta1.Convert_apiextensions_CustomResourceDefinition_To_v1beta1_CustomResourceDefinition(crd, &crdv1beta1, nil)
+	if err != nil {
+		return false, err
+	}
+
 	// Talk directly to CustomResource storage.
 	// We have to bypass the API server because TPR is shadowing CRD at this point.
 	storage := customresource.NewREST(
 		schema.GroupResource{Group: crd.Spec.Group, Resource: crd.Spec.Names.Plural},
 		schema.GroupVersionKind{Group: crd.Spec.Group, Version: crd.Spec.Version, Kind: crd.Spec.Names.ListKind},
 		apiextensionsserver.UnstructuredCopier{},
-		customresource.NewStrategy(discoveryclient.NewUnstructuredObjectTyper(nil), true, gvk),
+		customresource.NewStrategy(discoveryclient.NewUnstructuredObjectTyper(nil), true, gvk, crdv1beta1),
 		m.crdRESTOptionsGetter,
 	)
 

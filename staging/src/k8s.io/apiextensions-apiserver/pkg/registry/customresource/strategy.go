@@ -19,9 +19,12 @@ package customresource
 import (
 	"fmt"
 
+	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
+	apiextensionsvalidation "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/validation"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/api/validation"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -40,7 +43,7 @@ type CustomResourceDefinitionStorageStrategy struct {
 	validator       customResourceValidator
 }
 
-func NewStrategy(typer runtime.ObjectTyper, namespaceScoped bool, kind schema.GroupVersionKind) CustomResourceDefinitionStorageStrategy {
+func NewStrategy(typer runtime.ObjectTyper, namespaceScoped bool, kind schema.GroupVersionKind, crd apiextensionsv1beta1.CustomResourceDefinition) CustomResourceDefinitionStorageStrategy {
 	return CustomResourceDefinitionStorageStrategy{
 		ObjectTyper:     typer,
 		NameGenerator:   names.SimpleNameGenerator,
@@ -48,6 +51,7 @@ func NewStrategy(typer runtime.ObjectTyper, namespaceScoped bool, kind schema.Gr
 		validator: customResourceValidator{
 			namespaceScoped: namespaceScoped,
 			kind:            kind,
+			crd:             crd,
 		},
 	}
 }
@@ -113,6 +117,7 @@ func (a CustomResourceDefinitionStorageStrategy) MatchCustomResourceDefinitionSt
 type customResourceValidator struct {
 	namespaceScoped bool
 	kind            schema.GroupVersionKind
+	crd             apiextensionsv1beta1.CustomResourceDefinition
 }
 
 func (a customResourceValidator) Validate(ctx genericapirequest.Context, obj runtime.Object) field.ErrorList {
@@ -129,6 +134,13 @@ func (a customResourceValidator) Validate(ctx genericapirequest.Context, obj run
 	}
 	if typeAccessor.GetAPIVersion() != a.kind.Group+"/"+a.kind.Version {
 		return field.ErrorList{field.Invalid(field.NewPath("apiVersion"), typeAccessor.GetKind(), fmt.Sprintf("must be %v", a.kind.Group+"/"+a.kind.Version))}
+	}
+
+	customresource := obj.(*unstructured.Unstructured)
+	spec := customresource.UnstructuredContent()["spec"]
+
+	if err = apiextensionsvalidation.ValidateCustomResource(spec, a.crd); err != nil {
+		return field.ErrorList{field.Invalid(field.NewPath("spec"), spec, err.Error())}
 	}
 
 	return validation.ValidateObjectMetaAccessor(accessor, a.namespaceScoped, validation.NameIsDNSSubdomain, field.NewPath("metadata"))
@@ -152,6 +164,13 @@ func (a customResourceValidator) ValidateUpdate(ctx genericapirequest.Context, o
 	}
 	if typeAccessor.GetAPIVersion() != a.kind.Group+"/"+a.kind.Version {
 		return field.ErrorList{field.Invalid(field.NewPath("apiVersion"), typeAccessor.GetKind(), fmt.Sprintf("must be %v", a.kind.Group+"/"+a.kind.Version))}
+	}
+
+	customresource := obj.(*unstructured.Unstructured)
+	spec := customresource.UnstructuredContent()["spec"]
+
+	if err = apiextensionsvalidation.ValidateCustomResource(spec, a.crd); err != nil {
+		return field.ErrorList{field.Invalid(field.NewPath("spec"), spec, err.Error())}
 	}
 
 	return validation.ValidateObjectMetaAccessorUpdate(objAccessor, oldAccessor, field.NewPath("metadata"))
