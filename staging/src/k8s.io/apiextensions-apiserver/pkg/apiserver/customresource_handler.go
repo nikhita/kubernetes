@@ -26,6 +26,8 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/golang/glog"
+
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -44,11 +46,14 @@ import (
 	genericregistry "k8s.io/apiserver/pkg/registry/generic/registry"
 	"k8s.io/apiserver/pkg/storage/storagebackend"
 	"k8s.io/client-go/discovery"
+	"k8s.io/client-go/util/workqueue"
 
 	"k8s.io/apiextensions-apiserver/pkg/apis/apiextensions"
+	informers "k8s.io/apiextensions-apiserver/pkg/client/informers/internalversion/apiextensions/internalversion"
 	listers "k8s.io/apiextensions-apiserver/pkg/client/listers/apiextensions/internalversion"
 	"k8s.io/apiextensions-apiserver/pkg/controller/finalizer"
 	"k8s.io/apiextensions-apiserver/pkg/registry/customresource"
+	cache "k8s.io/client-go/tools/cache"
 )
 
 // crdHandler serves the `/apis` endpoint.
@@ -68,6 +73,7 @@ type crdHandler struct {
 	delegate          http.Handler
 	restOptionsGetter generic.RESTOptionsGetter
 	admission         admission.Interface
+	queue             workqueue.RateLimitingInterface
 }
 
 // crdInfo stores enough information to serve the storage for the custom resource
@@ -84,6 +90,7 @@ func NewCustomResourceDefinitionHandler(
 	groupDiscoveryHandler *groupDiscoveryHandler,
 	requestContextMapper apirequest.RequestContextMapper,
 	crdLister listers.CustomResourceDefinitionLister,
+	crdInformer informers.CustomResourceDefinitionInformer,
 	delegate http.Handler,
 	restOptionsGetter generic.RESTOptionsGetter,
 	admission admission.Interface) *crdHandler {
@@ -96,7 +103,14 @@ func NewCustomResourceDefinitionHandler(
 		delegate:                delegate,
 		restOptionsGetter:       restOptionsGetter,
 		admission:               admission,
+		queue:                   workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "CustomResourceDefinitionHandler"),
 	}
+
+	crdInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+		AddFunc:    ret.addCustomResourceDefinition,
+		UpdateFunc: ret.updateCustomResourceDefinition,
+		DeleteFunc: ret.deleteCustomResourceDefinition,
+	})
 
 	ret.customStorage.Store(crdStorageMap{})
 	return ret
@@ -296,7 +310,7 @@ func (r *crdHandler) getServingInfoFor(crd *apiextensions.CustomResourceDefiniti
 			typer,
 			crd.Spec.Scope == apiextensions.NamespaceScoped,
 			kind,
-			*crd,
+			crd,
 		),
 		r.restOptionsGetter,
 	)
@@ -348,6 +362,46 @@ func (r *crdHandler) getServingInfoFor(crd *apiextensions.CustomResourceDefiniti
 	storageMap[crd.UID] = ret
 	r.customStorage.Store(storageMap)
 	return ret
+}
+
+func (c *crdHandler) enqueue(obj *apiextensions.CustomResourceDefinition) {
+	key, err := cache.DeletionHandlingMetaNamespaceKeyFunc(obj)
+	if err != nil {
+		utilruntime.HandleError(fmt.Errorf("Couldn't get key for object %#v: %v", obj, err))
+		return
+	}
+
+	c.queue.Add(key)
+}
+
+func (c *crdHandler) addCustomResourceDefinition(obj interface{}) {
+	castObj := obj.(*apiextensions.CustomResourceDefinition)
+	glog.V(4).Infof("Adding customresourcedefinition %s", castObj.Name)
+	c.enqueue(castObj)
+}
+
+func (c *crdHandler) updateCustomResourceDefinition(obj, _ interface{}) {
+	castObj := obj.(*apiextensions.CustomResourceDefinition)
+	glog.V(4).Infof("Updating customresourcedefinition %s", castObj.Name)
+	c.enqueue(castObj)
+}
+
+func (c *crdHandler) deleteCustomResourceDefinition(obj interface{}) {
+	castObj, ok := obj.(*apiextensions.CustomResourceDefinition)
+	if !ok {
+		tombstone, ok := obj.(cache.DeletedFinalStateUnknown)
+		if !ok {
+			glog.Errorf("Couldn't get object from tombstone %#v", obj)
+			return
+		}
+		castObj, ok = tombstone.Obj.(*apiextensions.CustomResourceDefinition)
+		if !ok {
+			glog.Errorf("Tombstone contained object that is not expected %#v", obj)
+			return
+		}
+	}
+	glog.V(4).Infof("Deleting customresourcedefinition %q", castObj.Name)
+	c.enqueue(castObj)
 }
 
 type unstructuredNegotiatedSerializer struct {

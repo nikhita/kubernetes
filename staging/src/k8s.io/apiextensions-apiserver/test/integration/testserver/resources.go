@@ -155,7 +155,7 @@ func NewNoxuValidationCRD(scope apiextensionsv1beta1.ResourceScope) *apiextensio
 				ListKind:   "NoxuItemList",
 			},
 			Scope: apiextensionsv1beta1.NamespaceScoped,
-			Validation: &apiextensionsv1beta1.CustomResourceValidation{
+			Validation: apiextensionsv1beta1.CustomResourceValidation{
 				JSONSchema: &apiextensionsv1beta1.JSONSchemaProps{
 					Required: []string{"alpha", "beta"},
 					Properties: map[string]apiextensionsv1beta1.JSONSchemaProps{

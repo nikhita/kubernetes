@@ -19,8 +19,9 @@ package customresource
 import (
 	"fmt"
 
+	openapispec "github.com/go-openapi/spec"
 	"k8s.io/apiextensions-apiserver/pkg/apis/apiextensions"
-	apiextensionsvalidation "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/validation"
+	apiservervalidation "k8s.io/apiextensions-apiserver/pkg/apiserver/validation"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/api/validation"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -43,7 +44,7 @@ type CustomResourceDefinitionStorageStrategy struct {
 	validator       customResourceValidator
 }
 
-func NewStrategy(typer runtime.ObjectTyper, namespaceScoped bool, kind schema.GroupVersionKind, crd apiextensions.CustomResourceDefinition) CustomResourceDefinitionStorageStrategy {
+func NewStrategy(typer runtime.ObjectTyper, namespaceScoped bool, kind schema.GroupVersionKind, crd *apiextensions.CustomResourceDefinition) CustomResourceDefinitionStorageStrategy {
 	return CustomResourceDefinitionStorageStrategy{
 		ObjectTyper:     typer,
 		NameGenerator:   names.SimpleNameGenerator,
@@ -52,6 +53,7 @@ func NewStrategy(typer runtime.ObjectTyper, namespaceScoped bool, kind schema.Gr
 			namespaceScoped: namespaceScoped,
 			kind:            kind,
 			crd:             crd,
+			schema:          &openapispec.Schema{},
 		},
 	}
 }
@@ -117,7 +119,8 @@ func (a CustomResourceDefinitionStorageStrategy) MatchCustomResourceDefinitionSt
 type customResourceValidator struct {
 	namespaceScoped bool
 	kind            schema.GroupVersionKind
-	crd             apiextensions.CustomResourceDefinition
+	crd             *apiextensions.CustomResourceDefinition
+	schema          *openapispec.Schema
 }
 
 func (a customResourceValidator) Validate(ctx genericapirequest.Context, obj runtime.Object) field.ErrorList {
@@ -136,10 +139,19 @@ func (a customResourceValidator) Validate(ctx genericapirequest.Context, obj run
 		return field.ErrorList{field.Invalid(field.NewPath("apiVersion"), typeAccessor.GetKind(), fmt.Sprintf("must be %v", a.kind.Group+"/"+a.kind.Version))}
 	}
 
-	customresource := obj.(*unstructured.Unstructured)
+	// Validate the spec of the CR
+	customresource, ok := obj.(*unstructured.Unstructured)
+	if !ok {
+		return field.ErrorList{field.Invalid(field.NewPath(""), customresource, fmt.Sprintf("has type %T. Must be a pointer to an Unstructured type", customresource))}
+	}
 	spec := customresource.UnstructuredContent()["spec"]
 
-	if err = apiextensionsvalidation.ValidateCustomResource(spec, a.crd); err != nil {
+	// Store the converted schema in CustomResourceValidator
+	if err := apiservervalidation.ConvertToOpenAPITypes(a.crd, a.schema); err != nil {
+		return field.ErrorList{field.Invalid(field.NewPath(""), nil, err.Error())}
+	}
+
+	if err = apiservervalidation.ValidateCustomResource(spec, a.schema); err != nil {
 		return field.ErrorList{field.Invalid(field.NewPath("spec"), spec, err.Error())}
 	}
 
@@ -166,10 +178,14 @@ func (a customResourceValidator) ValidateUpdate(ctx genericapirequest.Context, o
 		return field.ErrorList{field.Invalid(field.NewPath("apiVersion"), typeAccessor.GetKind(), fmt.Sprintf("must be %v", a.kind.Group+"/"+a.kind.Version))}
 	}
 
-	customresource := obj.(*unstructured.Unstructured)
+	// Validate the spec of the CR
+	customresource, ok := obj.(*unstructured.Unstructured)
+	if !ok {
+		return field.ErrorList{field.Invalid(field.NewPath(""), customresource, fmt.Sprintf("has type %T. Must be a pointer to an Unstructured type", customresource))}
+	}
 	spec := customresource.UnstructuredContent()["spec"]
 
-	if err = apiextensionsvalidation.ValidateCustomResource(spec, a.crd); err != nil {
+	if err = apiservervalidation.ValidateCustomResource(spec, a.schema); err != nil {
 		return field.ErrorList{field.Invalid(field.NewPath("spec"), spec, err.Error())}
 	}
 

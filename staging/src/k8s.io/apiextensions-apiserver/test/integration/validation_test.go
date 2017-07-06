@@ -243,3 +243,51 @@ func TestCustomResourceValidationErrors(t *testing.T) {
 		}
 	}
 }
+
+// TODO: This should pass
+func TestCRValidationOnCRDUpdate(t *testing.T) {
+	stopCh, apiExtensionClient, clientPool, err := testserver.StartDefaultServer()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer close(stopCh)
+
+	noxuDefinition := testserver.NewNoxuValidationCRD(apiextensionsv1beta1.NamespaceScoped)
+
+	// set stricter schema
+	beta := noxuDefinition.Spec.Validation.JSONSchema.Properties["beta"]
+	beta.Minimum = apiextensionsv1beta1.Float64Ptr(12)
+
+	noxuVersionClient, err := testserver.CreateNewCustomResourceDefinition(noxuDefinition, apiExtensionClient, clientPool)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ns := "not-the-default"
+	noxuResourceClient := NewNamespacedCustomResourceClient(ns, noxuVersionClient, noxuDefinition)
+
+	// CR is rejected
+	_, err = instantiateCustomResource(t, testserver.NewNoxuValidationInstance(ns, "foo"), noxuResourceClient, noxuDefinition)
+	if err == nil {
+		t.Fatalf("unexpected non-error: CR should be rejected")
+	}
+
+	gottenCRD, err := apiExtensionClient.ApiextensionsV1beta1().CustomResourceDefinitions().Get("noxus.mygroup.example.com", metav1.GetOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// update the CRD to a less stricter schema
+	beta = gottenCRD.Spec.Validation.JSONSchema.Properties["beta"]
+	beta.Minimum = apiextensionsv1beta1.Float64Ptr(10)
+
+	updatedCRD, err := apiExtensionClient.ApiextensionsV1beta1().CustomResourceDefinitions().Update(gottenCRD)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// CR is now accepted
+	_, err = instantiateCustomResource(t, testserver.NewNoxuValidationInstance(ns, "foo"), noxuResourceClient, updatedCRD)
+	if err != nil {
+		t.Fatalf("unable to create noxu Instance:%v", err)
+	}
+}

@@ -186,7 +186,9 @@ func autoConvert_v1beta1_CustomResourceDefinitionSpec_To_apiextensions_CustomRes
 		return err
 	}
 	out.Scope = apiextensions.ResourceScope(in.Scope)
-	out.Validation = (*apiextensions.CustomResourceValidation)(unsafe.Pointer(in.Validation))
+	if err := Convert_v1beta1_CustomResourceValidation_To_apiextensions_CustomResourceValidation(&in.Validation, &out.Validation, s); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -202,7 +204,9 @@ func autoConvert_apiextensions_CustomResourceDefinitionSpec_To_v1beta1_CustomRes
 		return err
 	}
 	out.Scope = ResourceScope(in.Scope)
-	out.Validation = (*CustomResourceValidation)(unsafe.Pointer(in.Validation))
+	if err := Convert_apiextensions_CustomResourceValidation_To_v1beta1_CustomResourceValidation(&in.Validation, &out.Validation, s); err != nil {
+		return err
+	}
 	return nil
 }
 

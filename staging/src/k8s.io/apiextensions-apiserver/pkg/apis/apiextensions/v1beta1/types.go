@@ -33,7 +33,7 @@ type CustomResourceDefinitionSpec struct {
 	// Scope indicates whether this resource is cluster or namespace scoped.  Default is namespaced
 	Scope ResourceScope `json:"scope" protobuf:"bytes,4,opt,name=scope,casttype=ResourceScope"`
 	// Validation describes the validation methods for CustomResources
-	Validation *CustomResourceValidation `json:"validation,omitempty"`
+	Validation CustomResourceValidation `json:"validation,omitempty"`
 }
 
 // CustomResourceDefinitionNames indicates the names to serve this CustomResourceDefinition
@@ -151,25 +151,23 @@ type CustomResourceValidation struct {
 
 // JSONSchemaProps is a JSON-Schema following Specification Draft 4 (http://json-schema.org/).
 type JSONSchemaProps struct {
-	ID               string        `json:"id,omitempty"`
-	Schema           JSONSchemaURL `json:"-,omitempty"`
-	Ref              JSONSchemaRef `json:"-,omitempty"`
-	Description      string        `json:"description,omitempty"`
-	Type             StringOrArray `json:"type,omitempty"`
-	Format           string        `json:"format,omitempty"`
-	Title            string        `json:"title,omitempty"`
-	Default          interface{}   `json:"default,omitempty"`
-	Maximum          *float64      `json:"maximum,omitempty"`
-	ExclusiveMaximum bool          `json:"exclusiveMaximum,omitempty"`
-	Minimum          *float64      `json:"minimum,omitempty"`
-	ExclusiveMinimum bool          `json:"exclusiveMinimum,omitempty"`
-	MaxLength        *int64        `json:"maxLength,omitempty"`
-	MinLength        *int64        `json:"minLength,omitempty"`
-	Pattern          string        `json:"pattern,omitempty"`
-	MaxItems         *int64        `json:"maxItems,omitempty"`
-	MinItems         *int64        `json:"minItems,omitempty"`
-	// disable uniqueItems for now because it can cause the validation runtime
-	// complexity to become quadratic.
+	ID                   string                     `json:"id,omitempty"`
+	Schema               JSONSchemaURL              `json:"-,omitempty"`
+	Ref                  JSONSchemaRef              `json:"-,omitempty"`
+	Description          string                     `json:"description,omitempty"`
+	Type                 StringOrArray              `json:"type,omitempty"`
+	Format               string                     `json:"format,omitempty"`
+	Title                string                     `json:"title,omitempty"`
+	Default              interface{}                `json:"default,omitempty"`
+	Maximum              *float64                   `json:"maximum,omitempty"`
+	ExclusiveMaximum     bool                       `json:"exclusiveMaximum,omitempty"`
+	Minimum              *float64                   `json:"minimum,omitempty"`
+	ExclusiveMinimum     bool                       `json:"exclusiveMinimum,omitempty"`
+	MaxLength            *int64                     `json:"maxLength,omitempty"`
+	MinLength            *int64                     `json:"minLength,omitempty"`
+	Pattern              string                     `json:"pattern,omitempty"`
+	MaxItems             *int64                     `json:"maxItems,omitempty"`
+	MinItems             *int64                     `json:"minItems,omitempty"`
 	UniqueItems          bool                       `json:"uniqueItems,omitempty"`
 	MultipleOf           *float64                   `json:"multipleOf,omitempty"`
 	Enum                 []interface{}              `json:"enum,omitempty"`

@@ -33,7 +33,7 @@ type CustomResourceDefinitionSpec struct {
 	// Scope indicates whether this resource is cluster or namespace scoped.  Default is namespaced
 	Scope ResourceScope
 	// Validation describes the validation methods for CustomResources
-	Validation *CustomResourceValidation `json:"validation,omitempty"`
+	Validation CustomResourceValidation
 }
 
 // CustomResourceDefinitionNames indicates the names to serve this CustomResourceDefinition
@@ -146,47 +146,45 @@ type CustomResourceDefinitionList struct {
 type CustomResourceValidation struct {
 	// JSONSchema is the JSON Schema to be validated against.
 	// Can add other validation methods later if needed.
-	JSONSchema *JSONSchemaProps `json:"jsonSchema,omitempty"`
+	JSONSchema *JSONSchemaProps
 }
 
 // JSONSchemaProps is a JSON-Schema following Specification Draft 4 (http://json-schema.org/).
 type JSONSchemaProps struct {
-	ID               string        `json:"id,omitempty"`
-	Schema           JSONSchemaURL `json:"-,omitempty"`
-	Ref              JSONSchemaRef `json:"-,omitempty"`
-	Description      string        `json:"description,omitempty"`
-	Type             StringOrArray `json:"type,omitempty"`
-	Format           string        `json:"format,omitempty"`
-	Title            string        `json:"title,omitempty"`
-	Default          interface{}   `json:"default,omitempty"`
-	Maximum          *float64      `json:"maximum,omitempty"`
-	ExclusiveMaximum bool          `json:"exclusiveMaximum,omitempty"`
-	Minimum          *float64      `json:"minimum,omitempty"`
-	ExclusiveMinimum bool          `json:"exclusiveMinimum,omitempty"`
-	MaxLength        *int64        `json:"maxLength,omitempty"`
-	MinLength        *int64        `json:"minLength,omitempty"`
-	Pattern          string        `json:"pattern,omitempty"`
-	MaxItems         *int64        `json:"maxItems,omitempty"`
-	MinItems         *int64        `json:"minItems,omitempty"`
-	// disable uniqueItems for now because it can cause the validation runtime
-	// complexity to become quadratic.
-	UniqueItems          bool                       `json:"uniqueItems,omitempty"`
-	MultipleOf           *float64                   `json:"multipleOf,omitempty"`
-	Enum                 []interface{}              `json:"enum,omitempty"`
-	MaxProperties        *int64                     `json:"maxProperties,omitempty"`
-	MinProperties        *int64                     `json:"minProperties,omitempty"`
-	Required             []string                   `json:"required,omitempty"`
-	Items                *JSONSchemaPropsOrArray    `json:"items,omitempty"`
-	AllOf                []JSONSchemaProps          `json:"allOf,omitempty"`
-	OneOf                []JSONSchemaProps          `json:"oneOf,omitempty"`
-	AnyOf                []JSONSchemaProps          `json:"anyOf,omitempty"`
-	Not                  *JSONSchemaProps           `json:"not,omitempty"`
-	Properties           map[string]JSONSchemaProps `json:"properties,omitempty"`
-	AdditionalProperties *JSONSchemaPropsOrBool     `json:"additionalProperties,omitempty"`
-	PatternProperties    map[string]JSONSchemaProps `json:"patternProperties,omitempty"`
-	Dependencies         JSONSchemaDependencies     `json:"dependencies,omitempty"`
-	AdditionalItems      *JSONSchemaPropsOrBool     `json:"additionalItems,omitempty"`
-	Definitions          JSONSchemaDefinitions      `json:"definitions,omitempty"`
+	ID                   string
+	Schema               JSONSchemaURL
+	Ref                  JSONSchemaRef
+	Description          string
+	Type                 StringOrArray
+	Format               string
+	Title                string
+	Default              interface{}
+	Maximum              *float64
+	ExclusiveMaximum     bool
+	Minimum              *float64
+	ExclusiveMinimum     bool
+	MaxLength            *int64
+	MinLength            *int64
+	Pattern              string
+	MaxItems             *int64
+	MinItems             *int64
+	UniqueItems          bool
+	MultipleOf           *float64
+	Enum                 []interface{}
+	MaxProperties        *int64
+	MinProperties        *int64
+	Required             []string
+	Items                *JSONSchemaPropsOrArray
+	AllOf                []JSONSchemaProps
+	OneOf                []JSONSchemaProps
+	AnyOf                []JSONSchemaProps
+	Not                  *JSONSchemaProps
+	Properties           map[string]JSONSchemaProps
+	AdditionalProperties *JSONSchemaPropsOrBool
+	PatternProperties    map[string]JSONSchemaProps
+	Dependencies         JSONSchemaDependencies
+	AdditionalItems      *JSONSchemaPropsOrBool
+	Definitions          JSONSchemaDefinitions
 }
 
 // JSONSchemaRef represents a JSON reference that is potentially resolved.

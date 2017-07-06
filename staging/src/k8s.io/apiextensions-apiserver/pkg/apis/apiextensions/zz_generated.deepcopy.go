@@ -135,13 +135,10 @@ func DeepCopy_apiextensions_CustomResourceDefinitionSpec(in interface{}, out int
 		} else {
 			out.Names = *newVal.(*CustomResourceDefinitionNames)
 		}
-		if in.Validation != nil {
-			in, out := &in.Validation, &out.Validation
-			if newVal, err := c.DeepCopy(*in); err != nil {
-				return err
-			} else {
-				*out = newVal.(*CustomResourceValidation)
-			}
+		if newVal, err := c.DeepCopy(&in.Validation); err != nil {
+			return err
+		} else {
+			out.Validation = *newVal.(*CustomResourceValidation)
 		}
 		return nil
 	}
