@@ -157,25 +157,27 @@ type CustomResourceValidation struct {
 
 // JSONSchemaProps is a JSON-Schema following Specification Draft 4 (http://json-schema.org/).
 type JSONSchemaProps struct {
-	ID                   string                     `json:"id,omitempty"`
-	Schema               JSONSchemaURL              `json:"-,omitempty"`
-	Ref                  string                     `json:"-,omitempty"`
-	Description          string                     `json:"description,omitempty"`
-	Type                 StringOrArray              `json:"type,omitempty"`
-	Format               string                     `json:"format,omitempty"`
-	Title                string                     `json:"title,omitempty"`
-	Default              interface{}                `json:"default,omitempty"`
-	Maximum              *float64                   `json:"maximum,omitempty"`
-	ExclusiveMaximum     bool                       `json:"exclusiveMaximum,omitempty"`
-	Minimum              *float64                   `json:"minimum,omitempty"`
-	ExclusiveMinimum     bool                       `json:"exclusiveMinimum,omitempty"`
-	MaxLength            *int64                     `json:"maxLength,omitempty"`
-	MinLength            *int64                     `json:"minLength,omitempty"`
-	Pattern              string                     `json:"pattern,omitempty"`
-	MaxItems             *int64                     `json:"maxItems,omitempty"`
-	MinItems             *int64                     `json:"minItems,omitempty"`
-	UniqueItems          bool                       `json:"uniqueItems,omitempty"`
-	MultipleOf           *float64                   `json:"multipleOf,omitempty"`
+	ID          string        `json:"id,omitempty"`
+	Schema      JSONSchemaURL `json:"-,omitempty"`
+	Ref         string        `json:"-,omitempty"`
+	Description string        `json:"description,omitempty"`
+	Type        StringOrArray `json:"type,omitempty"`
+	Format      string        `json:"format,omitempty"`
+	Title       string        `json:"title,omitempty"`
+	// +k8s:deepcopy-gen:skip-field
+	Default          interface{} `json:"default,omitempty"`
+	Maximum          *float64    `json:"maximum,omitempty"`
+	ExclusiveMaximum bool        `json:"exclusiveMaximum,omitempty"`
+	Minimum          *float64    `json:"minimum,omitempty"`
+	ExclusiveMinimum bool        `json:"exclusiveMinimum,omitempty"`
+	MaxLength        *int64      `json:"maxLength,omitempty"`
+	MinLength        *int64      `json:"minLength,omitempty"`
+	Pattern          string      `json:"pattern,omitempty"`
+	MaxItems         *int64      `json:"maxItems,omitempty"`
+	MinItems         *int64      `json:"minItems,omitempty"`
+	UniqueItems      bool        `json:"uniqueItems,omitempty"`
+	MultipleOf       *float64    `json:"multipleOf,omitempty"`
+	// +k8s:deepcopy-gen:skip-field
 	Enum                 []interface{}              `json:"enum,omitempty"`
 	MaxProperties        *int64                     `json:"maxProperties,omitempty"`
 	MinProperties        *int64                     `json:"minProperties,omitempty"`

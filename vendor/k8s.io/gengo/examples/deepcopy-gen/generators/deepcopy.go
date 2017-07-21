@@ -40,9 +40,11 @@ type CustomArgs struct {
 
 // This is the comment tag that carries parameters for deep-copy generation.
 const (
-	tagName                     = "k8s:deepcopy-gen"
-	interfacesTagName           = tagName + ":interfaces"
-	interfacesNonPointerTagName = tagName + ":nonpointer-interfaces" // attach the DeepCopy<Interface> methods to the
+	tagName           = "k8s:deepcopy-gen"
+	interfacesTagName = tagName + ":interfaces"
+	// attach the DeepCopy<Interface> methods to the
+	interfacesNonPointerTagName = tagName + ":nonpointer-interfaces"
+	skipFieldTagName            = tagName + ":skip-field"
 )
 
 // Known values for the comment tag.
@@ -309,6 +311,27 @@ func hasDeepCopyMethod(t *types.Type) bool {
 	return false
 }
 
+// hasDeepCopyMethod returns true if an appropriate postDeepCopy(out *T) method is
+// defined for the given type.  This allows to exclude fields from automatic
+// deepcopy generation via +k8s:deepcopy-gen:skip-field and then to implement
+// custom code for these very fields. It is called after the generated deepcopy is
+// finished.
+//
+//  The correct signature for a type T is:
+//    func (in *T) postDeepCopy(out *T)
+func hasPostDeepCopyMethod(t *types.Type) bool {
+	for mn, mt := range t.Methods {
+		if mn != "postDeepCopy" {
+			continue
+		}
+		if len(mt.Signature.Results) != 0 || len(mt.Signature.Parameters) != 1 {
+			return false
+		}
+		return true
+	}
+	return false
+}
+
 func isRootedUnder(pkg string, roots []string) bool {
 	// Add trailing / to avoid false matches, e.g. foo/bar vs foo/barn.  This
 	// assumes that bounding dirs do not have trailing slashes.
@@ -467,10 +490,24 @@ func extractNonPointerInterfaces(comments []string) (bool, error) {
 	if len(values) == 0 {
 		return false, nil
 	}
-	result := values[0] == "true"
+	result := values[0] == "true" || values[0] == ""
 	for _, v := range values {
-		if v == "true" != result {
+		if v == "true" != result && values[0] != "" {
 			return false, fmt.Errorf("contradicting %v value %q found to previous value %v", interfacesNonPointerTagName, v, result)
+		}
+	}
+	return result, nil
+}
+
+func extractSkipField(comments []string) (bool, error) {
+	values := types.ExtractCommentTags("+", comments)[skipFieldTagName]
+	if len(values) == 0 {
+		return false, nil
+	}
+	result := values[0] == "true" || values[0] == ""
+	for _, v := range values {
+		if v == "true" != result && values[0] != "" {
+			return false, fmt.Errorf("contradicting %v value %q found to previous value %v", skipFieldTagName, v, result)
 		}
 	}
 	return result, nil
@@ -734,19 +771,28 @@ func (g *genDeepCopy) doStruct(t *types.Type, sw *generator.SnippetWriter) {
 
 	// Now fix-up fields as needed.
 	for _, m := range t.Members {
-		t := m.Type
-		hasMethod := hasDeepCopyMethod(t)
-		if t.Kind == types.Alias {
-			copied := *t.Underlying
-			copied.Name = t.Name
-			t = &copied
+		mt := m.Type
+
+		skipField, err := extractSkipField(m.CommentLines)
+		if err != nil {
+			glog.Fatalf("Invalid tag for type %q field %q: %v", mt.String(), m.String(), err)
+		}
+		if skipField {
+			continue
+		}
+
+		hasMethod := hasDeepCopyMethod(mt)
+		if mt.Kind == types.Alias {
+			copied := *mt.Underlying
+			copied.Name = mt.Name
+			mt = &copied
 		}
 		args := generator.Args{
-			"type": t,
-			"kind": t.Kind,
+			"type": mt,
+			"kind": mt.Kind,
 			"name": m.Name,
 		}
-		switch t.Kind {
+		switch mt.Kind {
 		case types.Builtin:
 			if hasMethod {
 				sw.Do("out.$.name$ = in.$.name$.DeepCopy()\n", args)
@@ -761,24 +807,31 @@ func (g *genDeepCopy) doStruct(t *types.Type, sw *generator.SnippetWriter) {
 				// Fixup non-nil reference-semantic types.
 				sw.Do("if in.$.name$ != nil {\n", args)
 				sw.Do("in, out := &in.$.name$, &out.$.name$\n", args)
-				g.generateFor(t, sw)
+				g.generateFor(mt, sw)
 				sw.Do("}\n", nil)
 			}
 		case types.Struct:
 			if hasMethod {
 				sw.Do("out.$.name$ = in.$.name$.DeepCopy()\n", args)
-			} else if t.IsAssignable() {
+			} else if mt.IsAssignable() {
 				sw.Do("out.$.name$ = in.$.name$\n", args)
 			} else {
 				sw.Do("in.$.name$.DeepCopyInto(&out.$.name$)\n", args)
 			}
 		case types.Interface:
 			sw.Do("if in.$.name$ == nil {out.$.name$=nil} else {\n", args)
-			sw.Do(fmt.Sprintf("out.$.name$ = in.$.name$.DeepCopy%s()\n", t.Name.Name), args)
+			if mt.Name.String() == "interface{}" {
+				glog.Fatalf("Cannot deepcopy %s.%s of type interface{}. Use a +%s tag and implement a method: func (in *%s) postDeepCopy(out *%s).", t.Name.Name, m.Name, skipFieldTagName, t.Name.Name, t.Name.Name)
+			}
+			sw.Do(fmt.Sprintf("out.$.name$ = in.$.name$.DeepCopy%s()\n", mt.Name.Name), args)
 			sw.Do("}\n", nil)
 		default:
 			sw.Do("out.$.name$ = in.$.name$.DeepCopy()\n", args)
 		}
+	}
+
+	if hasPostDeepCopyMethod(t) {
+		sw.Do("in.postDeepCopy(out)\n", nil)
 	}
 }
 

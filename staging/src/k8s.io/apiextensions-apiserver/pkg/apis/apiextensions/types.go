@@ -157,25 +157,27 @@ type CustomResourceValidation struct {
 
 // JSONSchemaProps is a JSON-Schema following Specification Draft 4 (http://json-schema.org/).
 type JSONSchemaProps struct {
-	ID                   string
-	Schema               JSONSchemaURL
-	Ref                  string
-	Description          string
-	Type                 StringOrArray
-	Format               string
-	Title                string
-	Default              interface{}
-	Maximum              *float64
-	ExclusiveMaximum     bool
-	Minimum              *float64
-	ExclusiveMinimum     bool
-	MaxLength            *int64
-	MinLength            *int64
-	Pattern              string
-	MaxItems             *int64
-	MinItems             *int64
-	UniqueItems          bool
-	MultipleOf           *float64
+	ID          string
+	Schema      JSONSchemaURL
+	Ref         string
+	Description string
+	Type        StringOrArray
+	Format      string
+	Title       string
+	// +k8s:deepcopy-gen:skip-field
+	Default          interface{}
+	Maximum          *float64
+	ExclusiveMaximum bool
+	Minimum          *float64
+	ExclusiveMinimum bool
+	MaxLength        *int64
+	MinLength        *int64
+	Pattern          string
+	MaxItems         *int64
+	MinItems         *int64
+	UniqueItems      bool
+	MultipleOf       *float64
+	// +k8s:deepcopy-gen:skip-field
 	Enum                 []interface{}
 	MaxProperties        *int64
 	MinProperties        *int64
