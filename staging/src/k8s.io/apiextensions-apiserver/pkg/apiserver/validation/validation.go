@@ -35,8 +35,16 @@ func ValidateCustomResource(customResource interface{}, validator *validate.Sche
 
 // ConvertToOpenAPITypes is used to convert internal types to go-openapi types.
 func ConvertToOpenAPITypes(in *apiextensions.CustomResourceDefinition, out *spec.Schema) error {
-	if err := convertJSONSchemaProps(in.Spec.Validation.JSONSchema, out); err != nil {
-		return err
+	if in.Spec.Validation.OpenAPISpecV2 != nil {
+		if err := convertJSONSchemaProps(in.Spec.Validation.OpenAPISpecV2, out); err != nil {
+			return err
+		}
+	}
+
+	if in.Spec.Validation.OpenAPISpecV3 != nil {
+		if err := convertJSONSchemaProps(in.Spec.Validation.OpenAPISpecV3, out); err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -46,13 +54,11 @@ func convertJSONSchemaProps(in *apiextensions.JSONSchemaProps, out *spec.Schema)
 		return nil
 	}
 
-	out.ID = in.ID
 	out.Schema = spec.SchemaURL(in.Schema)
 	out.Description = in.Description
 	out.Type = spec.StringOrArray(in.Type)
 	out.Format = in.Format
 	out.Title = in.Title
-	out.Default = in.Default
 	out.ExclusiveMaximum = in.ExclusiveMaximum
 	out.Minimum = in.Minimum
 	out.ExclusiveMinimum = in.ExclusiveMinimum
@@ -67,6 +73,8 @@ func convertJSONSchemaProps(in *apiextensions.JSONSchemaProps, out *spec.Schema)
 	out.MaxProperties = in.MaxProperties
 	out.MinProperties = in.MinProperties
 	out.Required = in.Required
+	out.Example = in.Example
+
 	if err := convertJSONSchemaPropsOrArray(in.Items, out.Items); err != nil {
 		return err
 	}
@@ -98,6 +106,13 @@ func convertJSONSchemaProps(in *apiextensions.JSONSchemaProps, out *spec.Schema)
 	if err := convertJSONSchemaPropsorBool(in.AdditionalProperties, out.AdditionalProperties); err != nil {
 		return err
 	}
+
+	if in.ExternalDocs != nil {
+		out.ExternalDocs = &spec.ExternalDocumentation{}
+		out.ExternalDocs.Description = in.ExternalDocs.Description
+		out.ExternalDocs.URL = in.ExternalDocs.URL
+	}
+
 	return nil
 }
 
@@ -134,9 +149,6 @@ func convertJSONSchemaPropsOrArray(in *apiextensions.JSONSchemaPropsOrArray, out
 		if err := convertJSONSchemaProps(in.Schema, out.Schema); err != nil {
 			return err
 		}
-		if err := convertSliceOfJSONSchemaProps(&in.JSONSchemas, &out.Schemas); err != nil {
-			return err
-		}
 	}
 	return nil
 }
@@ -148,19 +160,6 @@ func convertJSONSchemaPropsorBool(in *apiextensions.JSONSchemaPropsOrBool, out *
 		out.Schema = &spec.Schema{}
 		if err := convertJSONSchemaProps(in.Schema, out.Schema); err != nil {
 			return err
-		}
-	}
-	return nil
-}
-
-func convertJSONSchemaDependencies(in apiextensions.JSONSchemaDependencies, out spec.Dependencies) error {
-	if in != nil {
-		for k, v := range in {
-			schemaOrArray := spec.SchemaOrStringArray{}
-			if err := convertJSONSchemaPropsOrStringArray(&v, &schemaOrArray); err != nil {
-				return err
-			}
-			out[k] = schemaOrArray
 		}
 	}
 	return nil

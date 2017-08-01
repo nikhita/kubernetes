@@ -28,10 +28,24 @@ func (in *JSONSchemaProps) DeepCopy() *JSONSchemaProps {
 		out.Default = deepCopyJSON(in.Default)
 	}
 
+	if in.Example != nil {
+		out.Example = deepCopyJSON(in.Example)
+	}
+
 	if in.Type != nil {
 		in, out := &in.Type, &out.Type
 		*out = make(StringOrArray, len(*in))
 		copy(*out, *in)
+	}
+
+	if in.Ref != nil {
+		in, out := &in.Ref, &out.Ref
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(string)
+			**out = **in
+		}
 	}
 
 	if in.Maximum != nil {
@@ -228,6 +242,16 @@ func (in *JSONSchemaProps) DeepCopy() *JSONSchemaProps {
 		*out = make(JSONSchemaDefinitions, len(*in))
 		for key, val := range *in {
 			(*out)[key] = *val.DeepCopy()
+		}
+	}
+
+	if in.ExternalDocs != nil {
+		in, out := &in.ExternalDocs, &out.ExternalDocs
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(ExternalDocumentation)
+			(*in).DeepCopyInto(*out)
 		}
 	}
 

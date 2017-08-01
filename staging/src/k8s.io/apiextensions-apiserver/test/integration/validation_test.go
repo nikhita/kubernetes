@@ -99,7 +99,7 @@ func newNoxuValidationCRD(scope apiextensionsv1beta1.ResourceScope) *apiextensio
 			},
 			Scope: apiextensionsv1beta1.NamespaceScoped,
 			Validation: apiextensionsv1beta1.CustomResourceValidation{
-				JSONSchema: &apiextensionsv1beta1.JSONSchemaProps{
+				OpenAPISpecV3: &apiextensionsv1beta1.JSONSchemaProps{
 					Required: []string{"alpha", "beta"},
 					AdditionalProperties: &apiextensionsv1beta1.JSONSchemaPropsOrBool{
 						Allows: true,
@@ -326,7 +326,7 @@ func TestCRValidationOnCRDUpdate(t *testing.T) {
 	noxuDefinition := newNoxuValidationCRD(apiextensionsv1beta1.NamespaceScoped)
 
 	// set stricter schema
-	noxuDefinition.Spec.Validation.JSONSchema.Required = []string{"alpha", "beta", "epsilon"}
+	noxuDefinition.Spec.Validation.OpenAPISpecV3.Required = []string{"alpha", "beta", "epsilon"}
 
 	noxuVersionClient, err := testserver.CreateNewCustomResourceDefinition(noxuDefinition, apiExtensionClient, clientPool)
 	if err != nil {
@@ -347,7 +347,7 @@ func TestCRValidationOnCRDUpdate(t *testing.T) {
 	}
 
 	// update the CRD to a less stricter schema
-	gottenCRD.Spec.Validation.JSONSchema.Required = []string{"alpha", "beta"}
+	gottenCRD.Spec.Validation.OpenAPISpecV3.Required = []string{"alpha", "beta"}
 
 	updatedCRD, err := apiExtensionClient.ApiextensionsV1beta1().CustomResourceDefinitions().Update(gottenCRD)
 	if err != nil {
@@ -375,25 +375,25 @@ func TestForbiddenFieldsInSchema(t *testing.T) {
 	defer close(stopCh)
 
 	noxuDefinition := newNoxuValidationCRD(apiextensionsv1beta1.NamespaceScoped)
-	noxuDefinition.Spec.Validation.JSONSchema.AdditionalProperties.Allows = false
+	noxuDefinition.Spec.Validation.OpenAPISpecV3.AdditionalProperties.Allows = false
 
 	_, err = testserver.CreateNewCustomResourceDefinition(noxuDefinition, apiExtensionClient, clientPool)
 	if err == nil {
 		t.Fatalf("unexpected non-error: additionalProperties cannot be set to false")
 	}
 
-	noxuDefinition.Spec.Validation.JSONSchema.Properties["zeta"] = apiextensionsv1beta1.JSONSchemaProps{
+	noxuDefinition.Spec.Validation.OpenAPISpecV3.Properties["zeta"] = apiextensionsv1beta1.JSONSchemaProps{
 		Type:        []string{"array"},
 		UniqueItems: true,
 	}
-	noxuDefinition.Spec.Validation.JSONSchema.AdditionalProperties.Allows = true
+	noxuDefinition.Spec.Validation.OpenAPISpecV3.AdditionalProperties.Allows = true
 
 	_, err = testserver.CreateNewCustomResourceDefinition(noxuDefinition, apiExtensionClient, clientPool)
 	if err == nil {
 		t.Fatalf("unexpected non-error: uniqueItems cannot be set to true")
 	}
 
-	noxuDefinition.Spec.Validation.JSONSchema.Properties["zeta"] = apiextensionsv1beta1.JSONSchemaProps{
+	noxuDefinition.Spec.Validation.OpenAPISpecV3.Properties["zeta"] = apiextensionsv1beta1.JSONSchemaProps{
 		Type:        []string{"array"},
 		UniqueItems: false,
 	}

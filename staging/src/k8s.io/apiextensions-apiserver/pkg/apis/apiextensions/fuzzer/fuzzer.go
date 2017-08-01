@@ -50,7 +50,7 @@ func Funcs(codecs runtimeserializer.CodecFactory) []interface{} {
 			for i := 0; i < tobj.NumField(); i++ {
 				field := tobj.Field(i)
 				switch field.Name {
-				case "Default", "Enum":
+				case "Default", "Enum", "Example":
 					continue
 				default:
 					isValue := true
@@ -68,6 +68,9 @@ func Funcs(codecs runtimeserializer.CodecFactory) []interface{} {
 			}
 			if c.RandBool() {
 				obj.Enum = []interface{}{c.Uint64(), c.RandString(), c.RandBool()}
+			}
+			if c.RandBool() {
+				obj.Example = "foobarbaz"
 			}
 		},
 	}

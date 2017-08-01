@@ -141,11 +141,13 @@ type CustomResourceDefinitionList struct {
 	Items []CustomResourceDefinition
 }
 
-// CustomResourceValidation is a list of validation methods for CustomResources
+// CustomResourceValidation is a list of validation methods for CustomResources.
+// Can add other validation methods later if needed.
 type CustomResourceValidation struct {
-	// JSONSchema is the JSON Schema to be validated against.
-	// Can add other validation methods later if needed.
-	JSONSchema *JSONSchemaProps
+	// OpenAPISpecV2 is the OpenAPI v2 schema to be validated against.
+	OpenAPISpecV2 *JSONSchemaProps
+	// OpenAPISpecV3 is the OpenAPI v3 schema to be validated against.
+	OpenAPISpecV3 *JSONSchemaProps
 }
 
 // JSONSchemaProps is a JSON-Schema following Specification Draft 4 (http://json-schema.org/).
@@ -184,15 +186,12 @@ type JSONSchemaProps struct {
 	Dependencies         JSONSchemaDependencies
 	AdditionalItems      *JSONSchemaPropsOrBool
 	Definitions          JSONSchemaDefinitions
+	ExternalDocs         *ExternalDocumentation
+	Example              interface{}
 }
 
-// JSONSchemaURL represents a schema url. Defaults to JSON Schema Specification Draft 4.
+// JSONSchemaURL represents a schema url.
 type JSONSchemaURL string
-
-const (
-	// JSONSchemaDraft4URL is the url for JSON Schema Specification Draft 4.
-	JSONSchemaDraft4URL JSONSchemaURL = "http://json-schema.org/draft-04/schema#"
-)
 
 // StringOrArray represents a value that can either be a string or an array of strings.
 // Mainly here for serialization purposes.
@@ -223,3 +222,9 @@ type JSONSchemaPropsOrStringArray struct {
 
 // JSONSchemaDefinitions contains the models explicitly defined in this spec.
 type JSONSchemaDefinitions map[string]JSONSchemaProps
+
+// ExternalDocumentation allows referencing an external resource for extended documentation.
+type ExternalDocumentation struct {
+	Description string
+	URL         string
+}
