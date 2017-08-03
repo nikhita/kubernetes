@@ -376,7 +376,7 @@ func roundTrip(t *testing.T, scheme *runtime.Scheme, codec runtime.Codec, object
 	// NOTE: we use the encoding+decoding here as an alternative, guaranteed deep-copy to compare against.
 	fuzzer.ValueFuzz(object)
 	if !apiequality.Semantic.DeepEqual(original, obj3) {
-		t.Errorf("%v: fuzzing a copy altered the original, diff: %v", name, diff.ObjectReflectDiff(original, object))
+		t.Errorf("%v: fuzzing a copy altered the original, diff: %v", name, diff.ObjectReflectDiff(original, obj3))
 		return
 	}
 }
