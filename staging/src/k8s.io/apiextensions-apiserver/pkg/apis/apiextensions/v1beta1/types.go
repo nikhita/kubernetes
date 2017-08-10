@@ -16,7 +16,10 @@ limitations under the License.
 
 package v1beta1
 
-import metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+import (
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/util/jsonpath"
+)
 
 // CustomResourceDefinitionSpec describes how a user wants their resource to appear
 type CustomResourceDefinitionSpec struct {
@@ -29,6 +32,10 @@ type CustomResourceDefinitionSpec struct {
 
 	// Scope indicates whether this resource is cluster or namespace scoped.  Default is namespaced
 	Scope ResourceScope `json:"scope" protobuf:"bytes,4,opt,name=scope,casttype=ResourceScope"`
+	// Selector is a label query over CustomResources that should match the Replicas count.
+	Selector *metav1.LabelSelector `json:"selector,omitempty"`
+	// SubResources describes the sub-resources for CustomResources
+	SubResources CustomResourceSubResourceType `json:"subResources,omitempty"`
 }
 
 // CustomResourceDefinitionNames indicates the names to serve this CustomResourceDefinition
@@ -138,4 +145,67 @@ type CustomResourceDefinitionList struct {
 
 	// Items individual CustomResourceDefinitions
 	Items []CustomResourceDefinition `json:"items" protobuf:"bytes,2,rep,name=items"`
+}
+
+// CustomResourceSubResourceType defines the status and scale sub-resources for CRs
+type CustomResourceSubResourceType struct {
+	// Status denotes the status subresource for CustomResources
+	Status *CustomResourceSubResourceStatus `json:"status,omitempty"`
+	// Scale denotes the scale subresource for CustomResources
+	Scale *CustomResourceSubResourceStatus `json:"scale,omitempty"`
+}
+
+// CustomResourceSubResourceStatus serves the HTTP path under <CR Name>/status
+type CustomResourceSubResourceStatus struct {
+	// Transfer the whole object over the wire, but only allow mutation of the
+	// given JSON path. JSON path into a CustomResource i.e. “.status”, without
+	// any array notation.
+	Path jsonpath.JSONPath `json:"path,omitempty"`
+}
+
+type CustomResourceSubResourceScale struct {
+	// required, e.g. “.spec.replicas”
+	SpecReplicasPath jsonpath.JSONPath `json:"specReplicasPath,omitempty"`
+	// optional, e.g. “.status.replicas”
+	StatusReplicasPath jsonpath.JSONPath `json:"statusReplicasPath,omitempty"`
+	// optional, e.g. “.spec.labelSelector”
+	SelectorPath jsonpath.JSONPath `json:"selectorPath,omitempty"`
+}
+
+// The following is the payload to send over the wire for /scale. It happens
+// to be defined here in apiextensions.k8s.io because we don’t have a global
+// Scale type in meta/v1. Ref: https://github.com/kubernetes/kubernetes/issues/49504
+
+// Scale represents a scaling request for a resource.
+type Scale struct {
+	metav1.TypeMeta `json:",inline"`
+	// Standard object metadata; More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata.
+	// +optional
+	metav1.ObjectMeta `json:"metadata,omitempty" protobuf:"bytes,1,opt,name=metadata"`
+
+	// defines the behavior of the scale. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#spec-and-status.
+	// +optional
+	Spec ScaleSpec `json:"spec,omitempty" protobuf:"bytes,2,opt,name=spec"`
+
+	// current status of the scale. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#spec-and-status. Read-only.
+	// +optional
+	Status ScaleStatus `json:"status,omitempty" protobuf:"bytes,3,opt,name=status"`
+}
+
+// ScaleSpec describes the attributes of a scale subresource
+type ScaleSpec struct {
+	// desired number of instances for the scaled object.
+	// +optional
+	Replicas int32 `json:"replicas,omitempty" protobuf:"varint,1,opt,name=replicas"`
+}
+
+// ScaleStatus represents the current status of a scale subresource.
+type ScaleStatus struct {
+	// actual number of observed instances of the scaled object.
+	Replicas int32 `json:"replicas" protobuf:"varint,1,opt,name=replicas"`
+
+	// label query over pods that should match the replicas count.
+	// More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#label-selectors
+	// +optional
+	Selector *metav1.LabelSelector
 }
