@@ -29,6 +29,11 @@ type CustomResourceDefinitionSpec struct {
 
 	// Scope indicates whether this resource is cluster or namespace scoped.  Default is namespaced
 	Scope ResourceScope `json:"scope" protobuf:"bytes,4,opt,name=scope,casttype=ResourceScope"`
+	// SubResources describes the subresources for CustomResources
+	// This field is alpha-level and should only be sent to servers that enable
+	// subresources via the CurstomResourceSubResources feature gate.
+	// +optional
+	SubResources *CustomResourceSubResources `json:“subResources,omitempty”`
 }
 
 // CustomResourceDefinitionNames indicates the names to serve this CustomResourceDefinition
@@ -138,4 +143,77 @@ type CustomResourceDefinitionList struct {
 
 	// Items individual CustomResourceDefinitions
 	Items []CustomResourceDefinition `json:"items" protobuf:"bytes,2,rep,name=items"`
+}
+
+// CustomResourceSubResources defines the status and scale subresources for CustomResources.
+type CustomResourceSubResources struct {
+	// Status denotes the status subresource for CustomResources
+	Status *CustomResourceSubResourceStatus `json:“status,omitempty”`
+	// Scale denotes the scale subresource for CustomResources
+	Scale *CustomResourceSubResourceScale `json:“scale,omitempty”`
+}
+
+// CustomResourceSubResourceStatus defines how to serve the HTTP path <CR Name>/status.
+type CustomResourceSubResourceStatus struct {
+	// The JSON path (e.g. “.status”) of the status of a CustomResource.
+	// The whole object is transferred over the wire, but only the status can be mutated via the /status subresource.
+	// StatusPath is restricted to be “.status” and defaults to “.status”.
+	StatusPath string `json:“statusPath,omitempty”`
+	// The JSON path (e.g. “.spec”) of the spec of a CustomResource.
+	// SpecPath is restricted to be “.spec” and defaults to “.spec”.
+	// Changes to the specified JSON path increase the “.metadata.generation” value.
+	SpecPath string `json:“specPath,omitempty”`
+}
+
+// CustomResourceSubResourceScale defines how to serve the HTTP path <CR name>/scale.
+type CustomResourceSubResourceScale struct {
+	// required, e.g. “.spec.replicas”.
+	// Only JSON paths without the array notation are allowed.
+	SpecReplicasPath string `json:“specReplicasPath,omitempty”`
+	// optional, e.g. “.status.replicas”.
+	// Only JSON paths without the array notation are allowed.
+	StatusReplicasPath string `json:“statusReplicasPath,omitempty”`
+	// optional, e.g. “.spec.labelSelector”.
+	// Only JSON paths without the array notation are allowed.
+	LabelSelectorPath string `json:“labelSelectorPath,omitempty”`
+}
+
+// The following is the payload to send over the wire for /scale. It happens
+// to be defined here in apiextensions.k8s.io because we don’t have a global
+// Scale type in meta/v1. Ref: https://github.com/kubernetes/kubernetes/issues/49504
+
+// Scale represents a scaling request for a resource.
+type Scale struct {
+	metav1.TypeMeta `json:",inline"`
+	// Standard object metadata; More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata.
+	// +optional
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+
+	// defines the behavior of the scale. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#spec-and-status.
+	// +optional
+	Spec ScaleSpec `json:"spec,omitempty"`
+
+	// current status of the scale. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#spec-and-status. Read-only.
+	// +optional
+	Status ScaleStatus `json:"status,omitempty"`
+}
+
+// ScaleSpec describes the attributes of a scale subresource.
+type ScaleSpec struct {
+	// desired number of instances for the scaled object.
+	// +optional
+	Replicas int32 `json:"replicas,omitempty"`
+}
+
+// ScaleStatus represents the current status of a scale subresource.
+type ScaleStatus struct {
+	// actual number of observed instances of the scaled object.
+	Replicas int32 `json:"replicas"`
+
+	// label query that should match the replicas count. This is same
+	// as the label selector but in the string format to avoid introspection
+	// by clients. The string will be in the same format as the query-param syntax.
+	// More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#label-selectors
+	// +optional
+	Selector string `json:"selector"`
 }
