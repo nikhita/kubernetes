@@ -243,8 +243,8 @@ func Convert_apiextensions_CustomResourceDefinitionStatus_To_v1beta1_CustomResou
 }
 
 func autoConvert_v1beta1_CustomResourceValidation_To_apiextensions_CustomResourceValidation(in *CustomResourceValidation, out *apiextensions.CustomResourceValidation, s conversion.Scope) error {
-	out.OpenAPISpecV2 = (*apiextensions.JSONSchemaProps)(unsafe.Pointer(in.OpenAPISpecV2))
-	out.OpenAPISpecV3 = (*apiextensions.JSONSchemaProps)(unsafe.Pointer(in.OpenAPISpecV3))
+	out.OpenAPIV2Schema = (*apiextensions.JSONSchemaProps)(unsafe.Pointer(in.OpenAPIV2Schema))
+	out.OpenAPIV3Schema = (*apiextensions.JSONSchemaProps)(unsafe.Pointer(in.OpenAPIV3Schema))
 	return nil
 }
 
@@ -254,8 +254,8 @@ func Convert_v1beta1_CustomResourceValidation_To_apiextensions_CustomResourceVal
 }
 
 func autoConvert_apiextensions_CustomResourceValidation_To_v1beta1_CustomResourceValidation(in *apiextensions.CustomResourceValidation, out *CustomResourceValidation, s conversion.Scope) error {
-	out.OpenAPISpecV2 = (*JSONSchemaProps)(unsafe.Pointer(in.OpenAPISpecV2))
-	out.OpenAPISpecV3 = (*JSONSchemaProps)(unsafe.Pointer(in.OpenAPISpecV3))
+	out.OpenAPIV2Schema = (*JSONSchemaProps)(unsafe.Pointer(in.OpenAPIV2Schema))
+	out.OpenAPIV3Schema = (*JSONSchemaProps)(unsafe.Pointer(in.OpenAPIV3Schema))
 	return nil
 }
 

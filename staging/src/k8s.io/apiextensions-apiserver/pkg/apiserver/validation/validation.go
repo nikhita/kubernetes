@@ -35,17 +35,18 @@ func ValidateCustomResource(customResource interface{}, validator *validate.Sche
 
 // ConvertToOpenAPITypes is used to convert internal types to go-openapi types.
 func ConvertToOpenAPITypes(in *apiextensions.CustomResourceDefinition, out *spec.Schema) error {
-	if in.Spec.Validation.OpenAPISpecV2 != nil {
-		if err := convertJSONSchemaProps(in.Spec.Validation.OpenAPISpecV2, out); err != nil {
+	if in.Spec.Validation.OpenAPIV2Schema != nil {
+		if err := convertJSONSchemaProps(in.Spec.Validation.OpenAPIV2Schema, out); err != nil {
 			return err
 		}
 	}
 
-	if in.Spec.Validation.OpenAPISpecV3 != nil {
-		if err := convertJSONSchemaProps(in.Spec.Validation.OpenAPISpecV3, out); err != nil {
+	if in.Spec.Validation.OpenAPIV3Schema != nil {
+		if err := convertJSONSchemaProps(in.Spec.Validation.OpenAPIV3Schema, out); err != nil {
 			return err
 		}
 	}
+
 	return nil
 }
 

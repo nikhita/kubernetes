@@ -144,10 +144,10 @@ type CustomResourceDefinitionList struct {
 // CustomResourceValidation is a list of validation methods for CustomResources.
 // Can add other validation methods later if needed.
 type CustomResourceValidation struct {
-	// OpenAPISpecV2 is the OpenAPI v2 schema to be validated against.
-	OpenAPISpecV2 *JSONSchemaProps
-	// OpenAPISpecV3 is the OpenAPI v3 schema to be validated against.
-	OpenAPISpecV3 *JSONSchemaProps
+	// OpenAPIV2Schema is the OpenAPI v2 schema to be validated against.
+	OpenAPIV2Schema *JSONSchemaProps
+	// OpenAPIV3Schema is the OpenAPI v3 schema to be validated against.
+	OpenAPIV3Schema *JSONSchemaProps
 }
 
 // JSONSchemaProps is a JSON-Schema following Specification Draft 4 (http://json-schema.org/).
