@@ -133,6 +133,12 @@ const (
 	// Taint nodes based on their condition status for 'NetworkUnavailable',
 	// 'MemoryPressure', 'OutOfDisk' and 'DiskPressure'.
 	TaintNodesByCondition utilfeature.Feature = "TaintNodesByCondition"
+
+	// owner: @sttts, @nikhita
+	// alpha: v1.8
+	//
+	// CustomResourceValidation is a list of validation methods for CustomResources
+	CustomResourceValidation utilfeature.Feature = "CustomResourceValidation"
 )
 
 func init() {
@@ -164,4 +170,8 @@ var defaultKubernetesFeatureGates = map[utilfeature.Feature]utilfeature.FeatureS
 	StreamingProxyRedirects:          {Default: true, PreRelease: utilfeature.Beta},
 	genericfeatures.AdvancedAuditing: {Default: false, PreRelease: utilfeature.Alpha},
 	TaintNodesByCondition:            {Default: false, PreRelease: utilfeature.Alpha},
+
+	// inherited features from apiextensions-apiserver, relisted here to get a conflict if it is changed
+	// unintentionally on either side:
+	CustomResourceValidation: {Default: false, PreRelease: utilfeature.Alpha},
 }
