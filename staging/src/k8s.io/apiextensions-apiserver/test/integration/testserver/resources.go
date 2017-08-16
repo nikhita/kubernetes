@@ -80,12 +80,10 @@ func NewNoxuInstance(namespace, name string) *unstructured.Unstructured {
 				"namespace": namespace,
 				"name":      name,
 			},
-			"content": map[string]interface{}{
-				"key": "value",
-			},
-			"num": map[string]interface{}{
+			"spec": map[string]interface{}{
 				"num1": 9223372036854775807,
 				"num2": 1000000,
+				"foo":  "bar",
 			},
 		},
 	}
@@ -135,7 +133,7 @@ func NewCurletInstance(namespace, name string) *unstructured.Unstructured {
 				"namespace": namespace,
 				"name":      name,
 			},
-			"content": map[string]interface{}{
+			"spec": map[string]interface{}{
 				"key": "value",
 			},
 		},
@@ -221,6 +219,9 @@ func checkForWatchCachePrimed(crd *apiextensionsv1beta1.CustomResourceDefinition
 			"metadata": map[string]interface{}{
 				"namespace": ns,
 				"name":      instanceName,
+			},
+			"spec": map[string]interface{}{
+				"foo": "bar",
 			},
 		},
 	}
