@@ -16,8 +16,11 @@ limitations under the License.
 
 package apiextensions
 
-import "k8s.io/client-go/util/jsonpath"
-import "bytes"
+import (
+	"bytes"
+
+	"k8s.io/client-go/util/jsonpath"
+)
 
 // SetCRDCondition sets the status condition.  It either overwrites the existing one or
 // creates a new one
@@ -113,6 +116,7 @@ func CRDRemoveFinalizer(crd *CustomResourceDefinition, needle string) {
 	crd.Finalizers = newFinalizers
 }
 
+// ParseJSONPath parses the customResource and returns the JSONPath according to the template.
 func ParseJSONPath(customResource interface{}, name, template string) (string, error) {
 	j := jsonpath.New(name)
 	buf := new(bytes.Buffer)

@@ -34,7 +34,7 @@ import (
 	"k8s.io/apiserver/pkg/storage/names"
 )
 
-type customResourceDefinitionStorageStrategy struct {
+type CustomResourceDefinitionStorageStrategy struct {
 	runtime.ObjectTyper
 	names.NameGenerator
 
@@ -42,8 +42,8 @@ type customResourceDefinitionStorageStrategy struct {
 	validator       customResourceValidator
 }
 
-func NewStrategy(typer runtime.ObjectTyper, namespaceScoped bool, kind schema.GroupVersionKind) customResourceDefinitionStorageStrategy {
-	return customResourceDefinitionStorageStrategy{
+func NewStrategy(typer runtime.ObjectTyper, namespaceScoped bool, kind schema.GroupVersionKind) CustomResourceDefinitionStorageStrategy {
+	return CustomResourceDefinitionStorageStrategy{
 		ObjectTyper:     typer,
 		NameGenerator:   names.SimpleNameGenerator,
 		namespaceScoped: namespaceScoped,
@@ -54,36 +54,36 @@ func NewStrategy(typer runtime.ObjectTyper, namespaceScoped bool, kind schema.Gr
 	}
 }
 
-func (a customResourceDefinitionStorageStrategy) NamespaceScoped() bool {
+func (a CustomResourceDefinitionStorageStrategy) NamespaceScoped() bool {
 	return a.namespaceScoped
 }
 
-func (customResourceDefinitionStorageStrategy) PrepareForCreate(ctx genericapirequest.Context, obj runtime.Object) {
+func (CustomResourceDefinitionStorageStrategy) PrepareForCreate(ctx genericapirequest.Context, obj runtime.Object) {
 }
 
-func (customResourceDefinitionStorageStrategy) PrepareForUpdate(ctx genericapirequest.Context, obj, old runtime.Object) {
+func (CustomResourceDefinitionStorageStrategy) PrepareForUpdate(ctx genericapirequest.Context, obj, old runtime.Object) {
 }
 
-func (a customResourceDefinitionStorageStrategy) Validate(ctx genericapirequest.Context, obj runtime.Object) field.ErrorList {
+func (a CustomResourceDefinitionStorageStrategy) Validate(ctx genericapirequest.Context, obj runtime.Object) field.ErrorList {
 	return a.validator.Validate(ctx, obj)
 }
 
-func (customResourceDefinitionStorageStrategy) AllowCreateOnUpdate() bool {
+func (CustomResourceDefinitionStorageStrategy) AllowCreateOnUpdate() bool {
 	return false
 }
 
-func (customResourceDefinitionStorageStrategy) AllowUnconditionalUpdate() bool {
+func (CustomResourceDefinitionStorageStrategy) AllowUnconditionalUpdate() bool {
 	return false
 }
 
-func (customResourceDefinitionStorageStrategy) Canonicalize(obj runtime.Object) {
+func (CustomResourceDefinitionStorageStrategy) Canonicalize(obj runtime.Object) {
 }
 
-func (a customResourceDefinitionStorageStrategy) ValidateUpdate(ctx genericapirequest.Context, obj, old runtime.Object) field.ErrorList {
+func (a CustomResourceDefinitionStorageStrategy) ValidateUpdate(ctx genericapirequest.Context, obj, old runtime.Object) field.ErrorList {
 	return a.validator.ValidateUpdate(ctx, obj, old)
 }
 
-func (a customResourceDefinitionStorageStrategy) GetAttrs(obj runtime.Object) (labels.Set, fields.Set, bool, error) {
+func (a CustomResourceDefinitionStorageStrategy) GetAttrs(obj runtime.Object) (labels.Set, fields.Set, bool, error) {
 	accessor, err := meta.Accessor(obj)
 	if err != nil {
 		return nil, nil, false, err
@@ -104,7 +104,7 @@ func objectMetaFieldsSet(objectMeta metav1.Object, namespaceScoped bool) fields.
 	}
 }
 
-func (a customResourceDefinitionStorageStrategy) MatchCustomResourceDefinitionStorage(label labels.Selector, field fields.Selector) storage.SelectionPredicate {
+func (a CustomResourceDefinitionStorageStrategy) MatchCustomResourceDefinitionStorage(label labels.Selector, field fields.Selector) storage.SelectionPredicate {
 	return storage.SelectionPredicate{
 		Label:    label,
 		Field:    field,
@@ -133,20 +133,6 @@ func (a customResourceValidator) Validate(ctx genericapirequest.Context, obj run
 		return field.ErrorList{field.Invalid(field.NewPath("apiVersion"), typeAccessor.GetKind(), fmt.Sprintf("must be %v", a.kind.Group+"/"+a.kind.Version))}
 	}
 
-	customResourceObject, ok := obj.(*unstructured.Unstructured)
-	// this will never happen.
-	if !ok {
-		return field.ErrorList{field.Invalid(field.NewPath(""), customResourceObject, fmt.Sprintf("has type %T. Must be a pointer to an Unstructured type", customResourceObject))}
-	}
-
-	customResource := customResourceObject.UnstructuredContent()
-	extractedJSONPath, err := apiextensions.ParseJSONPath(customResource, "spec", "{.spec}")
-	if err != nil {
-		fmt.Printf("FUCKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK: %v", err)
-	}
-	fmt.Println("yayyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy")
-	fmt.Println(extractedJSONPath)
-
 	return validation.ValidateObjectMetaAccessor(accessor, a.namespaceScoped, validation.NameIsDNSSubdomain, field.NewPath("metadata"))
 }
 
@@ -174,15 +160,11 @@ func (a customResourceValidator) ValidateUpdate(ctx genericapirequest.Context, o
 }
 
 type customResourceDefinitionStorageStatusStrategy struct {
-	runtime.ObjectTyper
-	names.NameGenerator
-
-	namespaceScoped bool
-	validator       customResourceValidator
+	CustomResourceDefinitionStorageStrategy
 }
 
 func NewStatusStrategy(typer runtime.ObjectTyper, namespaceScoped bool, kind schema.GroupVersionKind) customResourceDefinitionStorageStatusStrategy {
-	return customResourceDefinitionStorageStatusStrategy{
+	strategy := CustomResourceDefinitionStorageStrategy{
 		ObjectTyper:     typer,
 		NameGenerator:   names.SimpleNameGenerator,
 		namespaceScoped: namespaceScoped,
@@ -191,4 +173,33 @@ func NewStatusStrategy(typer runtime.ObjectTyper, namespaceScoped bool, kind sch
 			kind:            kind,
 		},
 	}
+	return customResourceDefinitionStorageStatusStrategy{strategy}
+}
+
+func (a customResourceDefinitionStorageStatusStrategy) NamespaceScoped() bool {
+	return a.namespaceScoped
+}
+
+func (customResourceDefinitionStorageStatusStrategy) PrepareForUpdate(ctx genericapirequest.Context, obj, old runtime.Object) {
+	newCustomResourceObject := obj.(*unstructured.Unstructured)
+	oldCustomResourceObject := obj.(*unstructured.Unstructured)
+
+	newCustomResource := newCustomResourceObject.UnstructuredContent()
+	oldCustomResource := oldCustomResourceObject.UnstructuredContent()
+
+	newCustomResource["spec"] = oldCustomResource["spec"]
+
+	// Status updates are for only for updating status, not objectmeta.
+	// TODO: Update after ResetObjectMetaForStatus is added to meta/v1.
+	newCustomResourceObject.SetGeneration(oldCustomResourceObject.GetGeneration())
+	newCustomResourceObject.SetSelfLink(oldCustomResourceObject.GetSelfLink())
+	newCustomResourceObject.SetLabels(oldCustomResourceObject.GetLabels())
+	newCustomResourceObject.SetAnnotations(oldCustomResourceObject.GetAnnotations())
+	newCustomResourceObject.SetFinalizers(oldCustomResourceObject.GetFinalizers())
+	newCustomResourceObject.SetOwnerReferences(oldCustomResourceObject.GetOwnerReferences())
+}
+
+func (customResourceDefinitionStorageStatusStrategy) ValidateUpdate(ctx genericapirequest.Context, obj, old runtime.Object) field.ErrorList {
+	allErrs := field.ErrorList{}
+	return allErrs
 }

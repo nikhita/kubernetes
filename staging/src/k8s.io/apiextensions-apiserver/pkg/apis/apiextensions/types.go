@@ -182,6 +182,8 @@ type CustomResourceSubResourceScale struct {
 // to be defined here in apiextensions.k8s.io because we don’t have a global
 // Scale type in meta/v1. Ref: https://github.com/kubernetes/kubernetes/issues/49504
 
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
 // Scale represents a scaling request for a resource.
 type Scale struct {
 	metav1.TypeMeta
