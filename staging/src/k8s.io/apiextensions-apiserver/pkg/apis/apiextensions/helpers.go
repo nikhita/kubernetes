@@ -109,3 +109,11 @@ func CRDRemoveFinalizer(crd *CustomResourceDefinition, needle string) {
 	}
 	crd.Finalizers = newFinalizers
 }
+
+func Float64Ptr(f float64) *float64 {
+	return &f
+}
+
+func Int64Ptr(f int64) *int64 {
+	return &f
+}
