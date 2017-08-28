@@ -32,31 +32,53 @@ func TestJSONConversion(t *testing.T) {
 	sliceJSON := apiextensions.JSON([]string{"foo", "bar", "baz"})
 
 	testCases := map[string]struct {
-		input    *apiextensions.JSON
-		expected *JSON
+		input    *apiextensions.JSONSchemaProps
+		expected *JSONSchemaProps
 	}{
+		"omitempty": {
+			input: &apiextensions.JSONSchemaProps{
+				Default: nil,
+			},
+			expected: &JSONSchemaProps{},
+		},
 		"null": {
-			input: &nullJSON,
-			expected: &JSON{
-				Raw: []byte(`null`),
+			input: &apiextensions.JSONSchemaProps{
+				Default: &nullJSON,
+			},
+			expected: &JSONSchemaProps{
+				Default: &JSON{
+					Raw: []byte(`null`),
+				},
 			},
 		},
 		"string": {
-			input: &stringJSON,
-			expected: &JSON{
-				Raw: []byte(`"foo"`),
+			input: &apiextensions.JSONSchemaProps{
+				Default: &stringJSON,
+			},
+			expected: &JSONSchemaProps{
+				Default: &JSON{
+					Raw: []byte(`"foo"`),
+				},
 			},
 		},
 		"bool": {
-			input: &boolJSON,
-			expected: &JSON{
-				Raw: []byte(`true`),
+			input: &apiextensions.JSONSchemaProps{
+				Default: &boolJSON,
+			},
+			expected: &JSONSchemaProps{
+				Default: &JSON{
+					Raw: []byte(`true`),
+				},
 			},
 		},
 		"slice": {
-			input: &sliceJSON,
-			expected: &JSON{
-				Raw: []byte(`["foo","bar","baz"]`),
+			input: &apiextensions.JSONSchemaProps{
+				Default: &sliceJSON,
+			},
+			expected: &JSONSchemaProps{
+				Default: &JSON{
+					Raw: []byte(`["foo","bar","baz"]`),
+				},
 			},
 		},
 	}
@@ -72,7 +94,7 @@ func TestJSONConversion(t *testing.T) {
 	}
 
 	for k, tc := range testCases {
-		external := &JSON{}
+		external := &JSONSchemaProps{}
 		if err := scheme.Convert(tc.input, external, nil); err != nil {
 			t.Errorf("%s: unexpected error: %v", k, err)
 		}
