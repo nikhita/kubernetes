@@ -27,6 +27,7 @@ import (
 func addConversionFuncs(scheme *runtime.Scheme) error {
 	// Add non-generated conversion functions
 	err := scheme.AddConversionFuncs(
+		Convert_apiextensions_JSONSchemaProps_To_v1beta1_JSONSchemaProps,
 		Convert_apiextensions_JSON_To_v1beta1_JSON,
 		Convert_v1beta1_JSON_To_apiextensions_JSON,
 	)
@@ -36,16 +37,24 @@ func addConversionFuncs(scheme *runtime.Scheme) error {
 	return nil
 }
 
-func Convert_apiextensions_JSON_To_v1beta1_JSON(in *apiextensions.JSON, out *JSON, s conversion.Scope) error {
-	if in == nil {
-		out = nil
-		return nil
+func Convert_apiextensions_JSONSchemaProps_To_v1beta1_JSONSchemaProps(in *apiextensions.JSONSchemaProps, out *JSONSchemaProps, s conversion.Scope) error {
+	if err := autoConvert_apiextensions_JSONSchemaProps_To_v1beta1_JSONSchemaProps(in, out, s); err != nil {
+		return err
 	}
-	if *in == nil {
-		out = nil
-		return nil
+	if in.Default != nil {
+		if *(in.Default) == nil {
+			out.Default = nil
+		}
 	}
+	if in.Example != nil {
+		if *(in.Example) == nil {
+			out.Example = nil
+		}
+	}
+	return nil
+}
 
+func Convert_apiextensions_JSON_To_v1beta1_JSON(in *apiextensions.JSON, out *JSON, s conversion.Scope) error {
 	raw, err := json.Marshal(*in)
 	if err != nil {
 		return err
