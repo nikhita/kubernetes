@@ -37,15 +37,20 @@ func addConversionFuncs(scheme *runtime.Scheme) error {
 }
 
 func Convert_apiextensions_JSON_To_v1beta1_JSON(in *apiextensions.JSON, out *JSON, s conversion.Scope) error {
-	if in != nil {
-		raw, err := json.Marshal(*in)
-		if err != nil {
-			return err
-		}
-		out.Raw = raw
-	} else {
+	if in == nil {
 		out = nil
+		return nil
 	}
+	if *in == nil {
+		out = nil
+		return nil
+	}
+
+	raw, err := json.Marshal(*in)
+	if err != nil {
+		return err
+	}
+	out.Raw = raw
 	return nil
 }
 

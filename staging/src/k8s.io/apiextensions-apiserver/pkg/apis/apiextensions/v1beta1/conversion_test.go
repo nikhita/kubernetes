@@ -26,7 +26,8 @@ import (
 )
 
 func TestJSONConversion(t *testing.T) {
-	nullJSON := apiextensions.JSON(nil)
+	nilJSON := apiextensions.JSON(nil)
+	nullJSON := apiextensions.JSON("null")
 	stringJSON := apiextensions.JSON("foo")
 	boolJSON := apiextensions.JSON(true)
 	sliceJSON := apiextensions.JSON([]string{"foo", "bar", "baz"})
@@ -35,9 +36,15 @@ func TestJSONConversion(t *testing.T) {
 		input    *apiextensions.JSONSchemaProps
 		expected *JSONSchemaProps
 	}{
-		"omitempty": {
+		"nil": {
 			input: &apiextensions.JSONSchemaProps{
 				Default: nil,
+			},
+			expected: &JSONSchemaProps{},
+		},
+		"aliased nil": {
+			input: &apiextensions.JSONSchemaProps{
+				Default: &nilJSON,
 			},
 			expected: &JSONSchemaProps{},
 		},
@@ -47,7 +54,7 @@ func TestJSONConversion(t *testing.T) {
 			},
 			expected: &JSONSchemaProps{
 				Default: &JSON{
-					Raw: []byte(`null`),
+					Raw: []byte(`"null"`),
 				},
 			},
 		},
