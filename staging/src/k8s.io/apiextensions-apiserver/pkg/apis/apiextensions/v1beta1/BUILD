@@ -54,6 +54,10 @@ filegroup(
 
 go_test(
     name = "go_default_test",
-    srcs = ["marshal_test.go"],
+    srcs = [
+        "conversion_test.go",
+        "marshal_test.go",
+    ],
     library = ":go_default_library",
+    deps = ["//vendor/k8s.io/apiextensions-apiserver/pkg/apis/apiextensions:go_default_library"],
 )
