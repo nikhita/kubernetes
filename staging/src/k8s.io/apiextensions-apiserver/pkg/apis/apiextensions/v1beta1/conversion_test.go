@@ -62,15 +62,14 @@ func TestJSONConversion(t *testing.T) {
 	}
 
 	scheme := runtime.NewScheme()
+
+	// add internal and external types
+	if err := apiextensions.AddToScheme(scheme); err != nil {
+		t.Fatal(err)
+	}
 	if err := AddToScheme(scheme); err != nil {
 		t.Fatal(err)
 	}
-
-	// add internal types
-	scheme.AddKnownTypes(SchemeGroupVersion,
-		&apiextensions.CustomResourceDefinition{},
-		&apiextensions.CustomResourceDefinitionList{},
-	)
 
 	for k, tc := range testCases {
 		external := &JSON{}
