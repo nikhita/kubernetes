@@ -20,6 +20,8 @@ import (
 	"reflect"
 	"testing"
 
+	"k8s.io/apimachinery/pkg/runtime"
+
 	"k8s.io/apiextensions-apiserver/pkg/apis/apiextensions"
 )
 
@@ -34,7 +36,6 @@ func TestJSONConversion(t *testing.T) {
 		expected *JSON
 	}{
 		"omitempty": {
-			input:    nil,
 			expected: &JSON{},
 		},
 		"null": {
@@ -63,11 +64,17 @@ func TestJSONConversion(t *testing.T) {
 		},
 	}
 
+	scheme := runtime.NewScheme()
+	if err := AddToScheme(scheme); err != nil {
+		t.Fatal(err)
+	}
+
 	for k, tc := range testCases {
 		external := &JSON{}
-		if err := Convert_apiextensions_JSON_To_v1beta1_JSON(tc.input, external, nil); err != nil {
-			t.Fatalf("unexpected error: %v", err)
+		if err := scheme.Convert(tc.input, external, nil); err != nil {
+			t.Errorf("%s: unexpected error: %v", k, err)
 		}
+
 		if !reflect.DeepEqual(external, tc.expected) {
 			t.Errorf("%s: expected\n\t%#v, got \n\t%#v", k, tc.expected, external)
 		}
