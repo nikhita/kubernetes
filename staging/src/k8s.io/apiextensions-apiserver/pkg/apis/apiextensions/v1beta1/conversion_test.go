@@ -35,9 +35,6 @@ func TestJSONConversion(t *testing.T) {
 		input    *apiextensions.JSON
 		expected *JSON
 	}{
-		"omitempty": {
-			expected: &JSON{},
-		},
 		"null": {
 			input: &nullJSON,
 			expected: &JSON{
@@ -68,6 +65,12 @@ func TestJSONConversion(t *testing.T) {
 	if err := AddToScheme(scheme); err != nil {
 		t.Fatal(err)
 	}
+
+	// add internal types
+	scheme.AddKnownTypes(SchemeGroupVersion,
+		&apiextensions.CustomResourceDefinition{},
+		&apiextensions.CustomResourceDefinitionList{},
+	)
 
 	for k, tc := range testCases {
 		external := &JSON{}
