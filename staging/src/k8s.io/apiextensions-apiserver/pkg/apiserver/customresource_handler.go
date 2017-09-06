@@ -30,6 +30,7 @@ import (
 	"github.com/go-openapi/validate"
 	"github.com/golang/glog"
 
+	apiextensionsfeatures "k8s.io/apiextensions-apiserver/pkg/features"
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -48,6 +49,7 @@ import (
 	"k8s.io/apiserver/pkg/registry/generic"
 	genericregistry "k8s.io/apiserver/pkg/registry/generic/registry"
 	"k8s.io/apiserver/pkg/storage/storagebackend"
+	utilfeature "k8s.io/apiserver/pkg/util/feature"
 	"k8s.io/client-go/discovery"
 	cache "k8s.io/client-go/tools/cache"
 
@@ -328,6 +330,13 @@ func (r *crdHandler) getServingInfoFor(crd *apiextensions.CustomResourceDefiniti
 	}
 	validator := validate.NewSchemaValidator(openapiSchema, nil, "", strfmt.Default)
 
+	// use validator also for defaulting, if enabled
+	// TODO: strip down the expanded validator. We don't have to do all checks on defaulting.
+	openAPIdefaulter := validator
+	if !utilfeature.DefaultFeatureGate.Enabled(apiextensionsfeatures.CustomResourceDefaulting) {
+		openAPIdefaulter = nil
+	}
+
 	storage := customresource.NewREST(
 		schema.GroupResource{Group: crd.Spec.Group, Resource: crd.Status.AcceptedNames.Plural},
 		schema.GroupVersionKind{Group: crd.Spec.Group, Version: crd.Spec.Version, Kind: crd.Status.AcceptedNames.ListKind},
@@ -337,7 +346,7 @@ func (r *crdHandler) getServingInfoFor(crd *apiextensions.CustomResourceDefiniti
 			kind,
 			validator,
 		),
-		r.restOptionsGetter,
+		defaultingRestOptionsGetter{r.restOptionsGetter, openAPIdefaulter},
 	)
 
 	selfLinkPrefix := ""
@@ -349,7 +358,7 @@ func (r *crdHandler) getServingInfoFor(crd *apiextensions.CustomResourceDefiniti
 	}
 
 	clusterScoped := crd.Spec.Scope == apiextensions.ClusterScoped
-
+	defaulter := unstructuredDefaulter{parameterScheme, openAPIdefaulter}
 	requestScope := handlers.RequestScope{
 		Namer: handlers.ContextBasedNaming{
 			GetContext: func(req *http.Request) apirequest.Context {
@@ -365,7 +374,7 @@ func (r *crdHandler) getServingInfoFor(crd *apiextensions.CustomResourceDefiniti
 			return ret
 		},
 
-		Serializer:     unstructuredNegotiatedSerializer{typer: typer, creator: creator},
+		Serializer:     unstructuredNegotiatedSerializer{typer: typer, creator: creator, defaulter: openAPIdefaulter},
 		ParameterCodec: parameterCodec,
 
 		Creater: creator,
@@ -373,7 +382,7 @@ func (r *crdHandler) getServingInfoFor(crd *apiextensions.CustomResourceDefiniti
 			UnstructuredObjectConverter: unstructured.UnstructuredObjectConverter{},
 			clusterScoped:               clusterScoped,
 		},
-		Defaulter:       unstructuredDefaulter{parameterScheme},
+		Defaulter:       defaulter,
 		Typer:           typer,
 		UnsafeConvertor: unstructured.UnstructuredObjectConverter{},
 
@@ -457,8 +466,9 @@ func (c *crdHandler) updateCustomResourceDefinition(oldObj, newObj interface{}) 
 }
 
 type unstructuredNegotiatedSerializer struct {
-	typer   runtime.ObjectTyper
-	creator runtime.ObjectCreater
+	typer     runtime.ObjectTyper
+	creator   runtime.ObjectCreater
+	defaulter *validate.SchemaValidator
 }
 
 func (s unstructuredNegotiatedSerializer) SupportedMediaTypes() []runtime.SerializerInfo {
@@ -482,7 +492,7 @@ func (s unstructuredNegotiatedSerializer) EncoderForVersion(serializer runtime.E
 }
 
 func (s unstructuredNegotiatedSerializer) DecoderToVersion(serializer runtime.Decoder, gv runtime.GroupVersioner) runtime.Decoder {
-	return unstructuredDecoder{delegate: Codecs.DecoderToVersion(serializer, gv)}
+	return defaultingDecoder{unstructuredDecoder{delegate: Codecs.DecoderToVersion(serializer, gv)}, s.defaulter}
 }
 
 type unstructuredDecoder struct {
@@ -546,14 +556,30 @@ func (c unstructuredCreator) New(kind schema.GroupVersionKind) (runtime.Object, 
 }
 
 type unstructuredDefaulter struct {
-	delegate runtime.ObjectDefaulter
+	delegate  runtime.ObjectDefaulter
+	defaulter *validate.SchemaValidator
 }
 
 func (d unstructuredDefaulter) Default(in runtime.Object) {
 	// Delegate for things other than Unstructured.
-	if _, ok := in.(runtime.Unstructured); !ok {
+	obj, ok := in.(runtime.Unstructured)
+	if !ok {
 		d.delegate.Default(in)
+		return
 	}
+
+	// apply defaults from the validator
+	if d.defaulter == nil {
+		return
+	}
+	result := d.defaulter.Validate(obj.UnstructuredContent())
+	if !result.IsValid() {
+		ns, _ := unstructured.NestedString(obj.UnstructuredContent(), "namespace")
+		name, _ := unstructured.NestedString(obj.UnstructuredContent(), "name")
+		utilruntime.HandleError(fmt.Errorf("validation error of CustomResource %s/%s: %v", ns, name, result.AsError()))
+		return
+	}
+	result.ApplyDefaults()
 }
 
 type CRDRESTOptionsGetter struct {
@@ -577,4 +603,58 @@ func (t CRDRESTOptionsGetter) GetRESTOptions(resource schema.GroupResource) (gen
 		ret.Decorator = genericregistry.StorageWithCacher(t.DefaultWatchCacheSize)
 	}
 	return ret, nil
+}
+
+// defaultingRestOptionsGetter wraps a RestOptionGetter and sets a storage codec that does defaulting.
+type defaultingRestOptionsGetter struct {
+	getter    generic.RESTOptionsGetter
+	defaulter *validate.SchemaValidator
+}
+
+func (g defaultingRestOptionsGetter) GetRESTOptions(resource schema.GroupResource) (generic.RESTOptions, error) {
+	opt, err := g.getter.GetRESTOptions(resource)
+	if err != nil {
+		return opt, err
+	}
+
+	cfg := *opt.StorageConfig // shallow copy
+	cfg.Codec = &defaultingCodec{opt.StorageConfig.Codec, defaultingDecoder{opt.StorageConfig.Codec, g.defaulter}}
+	opt.StorageConfig = &cfg
+
+	return opt, nil
+}
+
+// defaultingCodec does defaulting on decode
+type defaultingCodec struct {
+	runtime.Encoder
+	defaultingDecoder
+}
+
+// defaultingDecoder does defaulting on decode
+type defaultingDecoder struct {
+	runtime.Decoder
+	defaulter *validate.SchemaValidator
+}
+
+func (c defaultingDecoder) Decode(data []byte, defaults *schema.GroupVersionKind, into runtime.Object) (runtime.Object, *schema.GroupVersionKind, error) {
+	out, gvk, err := c.Decoder.Decode(data, defaults, into)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	var u *unstructured.Unstructured
+	var ok bool
+	if u, ok = out.(*unstructured.Unstructured); !ok {
+		return nil, nil, fmt.Errorf("expected Unstructred in CR storage codec, got %T", out)
+	}
+
+	if c.defaulter != nil {
+		result := c.defaulter.Validate(u.UnstructuredContent())
+		if result.HasErrors() {
+			return nil, nil, fmt.Errorf("CRD object did not validate: %v", result.Errors)
+		}
+		result.ApplyDefaults()
+	}
+
+	return out, gvk, err
 }
