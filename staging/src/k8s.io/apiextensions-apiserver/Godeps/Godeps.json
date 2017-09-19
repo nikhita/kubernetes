@@ -140,7 +140,7 @@
 		},
 		{
 			"ImportPath": "github.com/go-openapi/spec",
-			"Rev": "6aced65f8501fe1217321abf0749d354824ba2ff"
+			"Rev": "7abd5745472fff5eb3685386d5fb8bf38683154d"
 		},
 		{
 			"ImportPath": "github.com/go-openapi/strfmt",
