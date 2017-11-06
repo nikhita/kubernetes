@@ -107,6 +107,12 @@ message CustomResourceDefinitionSpec {
   // Validation describes the validation methods for CustomResources
   // +optional
   optional CustomResourceValidation validation = 5;
+
+  // SubResources describes the subresources for CustomResources
+  // This field is alpha-level and should only be sent to servers that enable
+  // subresources via the CurstomResourceSubResources feature gate.
+  // +optional
+  optional CustomResourceSubResources subResources = 6;
 }
 
 // CustomResourceDefinitionStatus indicates the state of the CustomResourceDefinition
@@ -117,6 +123,41 @@ message CustomResourceDefinitionStatus {
   // AcceptedNames are the names that are actually being used to serve discovery
   // They may be different than the names in spec.
   optional CustomResourceDefinitionNames acceptedNames = 2;
+}
+
+// CustomResourceSubResourceScale defines how to serve the HTTP path <CR name>/scale.
+message CustomResourceSubResourceScale {
+  // required, e.g. ".spec.replicas".
+  // Only JSON paths without the array notation are allowed.
+  optional string specReplicasPath = 1;
+
+  // optional, e.g. ".status.replicas".
+  // Only JSON paths without the array notation are allowed.
+  optional string statusReplicasPath = 2;
+
+  // optional, e.g. ".spec.labelSelector".
+  // Only JSON paths without the array notation are allowed.
+  optional string labelSelectorPath = 3;
+
+  // ScaleGroupVersion denotes the GroupVersion in the form "group/version"
+  // of the Scale object sent as the payload for /scale.
+  // It allows transition to future versions easily.
+  // Today only autoscaling/v1 is allowed.
+  optional string scaleGroupVersion = 4;
+}
+
+// CustomResourceSubResourceStatus defines how to serve the HTTP path <CR Name>/status.
+// status is represented by the `.status` JSON path.
+message CustomResourceSubResourceStatus {
+}
+
+// CustomResourceSubResources defines the status and scale subresources for CustomResources.
+message CustomResourceSubResources {
+  // Status denotes the status subresource for CustomResources
+  optional CustomResourceSubResourceStatus status = 1;
+
+  // Scale denotes the scale subresource for CustomResources
+  optional CustomResourceSubResourceScale scale = 2;
 }
 
 // CustomResourceValidation is a list of validation methods for CustomResources.
