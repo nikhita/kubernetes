@@ -16,7 +16,9 @@ limitations under the License.
 
 package apiextensions
 
-import metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+import (
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+)
 
 // CustomResourceDefinitionSpec describes how a user wants their resource to appear
 type CustomResourceDefinitionSpec struct {
@@ -30,6 +32,8 @@ type CustomResourceDefinitionSpec struct {
 	Scope ResourceScope
 	// Validation describes the validation methods for CustomResources
 	Validation *CustomResourceValidation
+	// SubResources describes the subresources for CustomResources
+	SubResources *CustomResourceSubResources
 }
 
 // CustomResourceDefinitionNames indicates the names to serve this CustomResourceDefinition
@@ -145,4 +149,34 @@ type CustomResourceDefinitionList struct {
 type CustomResourceValidation struct {
 	// OpenAPIV3Schema is the OpenAPI v3 schema to be validated against.
 	OpenAPIV3Schema *JSONSchemaProps
+}
+
+// CustomResourceSubResources defines the status and scale subresources for CustomResources.
+type CustomResourceSubResources struct {
+	// Status denotes the status subresource for CustomResources
+	Status *CustomResourceSubResourceStatus
+	// Scale denotes the scale subresource for CustomResources
+	Scale *CustomResourceSubResourceScale
+}
+
+// CustomResourceSubResourceStatus defines how to serve the HTTP path <CR Name>/status.
+// status is represented by the `.status` JSON path.
+type CustomResourceSubResourceStatus struct{}
+
+// CustomResourceSubResourceScale defines how to serve the HTTP path <CR name>/scale.
+type CustomResourceSubResourceScale struct {
+	// required, e.g. ".spec.replicas".
+	// Only JSON paths without the array notation are allowed.
+	SpecReplicasPath string
+	// optional, e.g. ".status.replicas".
+	// Only JSON paths without the array notation are allowed.
+	StatusReplicasPath string
+	// optional, e.g. ".spec.labelSelector".
+	// Only JSON paths without the array notation are allowed.
+	LabelSelectorPath string
+	// ScaleGroupVersion denotes the GroupVersion in the form "group/version"
+	// of the Scale object sent as the payload for /scale.
+	// It allows transition to future versions easily.
+	// Today only autoscaling/v1 is allowed.
+	ScaleGroupVersion string
 }

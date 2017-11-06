@@ -85,8 +85,11 @@ type crdInfo struct {
 	spec          *apiextensions.CustomResourceDefinitionSpec
 	acceptedNames *apiextensions.CustomResourceDefinitionNames
 
-	storage      *customresource.REST
-	requestScope handlers.RequestScope
+	storage customresource.CustomResourceStorage
+
+	requestScope       handlers.RequestScope
+	scaleRequestScope  handlers.RequestScope
+	statusRequestScope handlers.RequestScope
 }
 
 // crdStorageMap goes from customresourcedefinition to its storage
@@ -176,70 +179,97 @@ func (r *crdHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 
 	terminating := apiextensions.IsCRDConditionTrue(crd, apiextensions.Terminating)
 
+	subresource := requestInfo.Subresource
 	crdInfo, err := r.getServingInfoFor(crd)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	storage := crdInfo.storage
-	requestScope := crdInfo.requestScope
+	storage := crdInfo.storage.CustomResource
 	minRequestTimeout := 1 * time.Minute
 
-	switch requestInfo.Verb {
-	case "get":
-		handler := handlers.GetResource(storage, storage, requestScope)
-		handler(w, req)
-		return
-	case "list":
-		forceWatch := false
-		handler := handlers.ListResource(storage, storage, requestScope, forceWatch, minRequestTimeout)
-		handler(w, req)
-		return
-	case "watch":
-		forceWatch := true
-		handler := handlers.ListResource(storage, storage, requestScope, forceWatch, minRequestTimeout)
-		handler(w, req)
-		return
-	case "create":
-		if terminating {
-			http.Error(w, fmt.Sprintf("%v not allowed while CustomResourceDefinition is terminating", requestInfo.Verb), http.StatusMethodNotAllowed)
+	var requestScope handlers.RequestScope
+	switch {
+	case subresource == "status" && crd.Spec.SubResources != nil && crd.Spec.SubResources.Status != nil:
+		requestScope = crdInfo.statusRequestScope
+		storage := crdInfo.storage.Status
+		switch requestInfo.Verb {
+		case "get":
+			handlers.GetResource(storage, nil, requestScope)(w, req)
+			return
+		case "update":
+			if terminating {
+				http.Error(w, fmt.Sprintf("%v not allowed while CustomResourceDefinition is terminating", requestInfo.Verb), http.StatusMethodNotAllowed)
+				return
+			}
+			handlers.UpdateResource(storage, requestScope, discovery.NewUnstructuredObjectTyper(nil), r.admission)(w, req)
 			return
 		}
-		handler := handlers.CreateResource(storage, requestScope, discovery.NewUnstructuredObjectTyper(nil), r.admission)
-		handler(w, req)
-		return
-	case "update":
-		if terminating {
-			http.Error(w, fmt.Sprintf("%v not allowed while CustomResourceDefinition is terminating", requestInfo.Verb), http.StatusMethodNotAllowed)
+
+	case subresource == "status" && crd.Spec.SubResources != nil && crd.Spec.SubResources.Scale != nil:
+		requestScope = crdInfo.scaleRequestScope
+		storage := crdInfo.storage.Scale
+		switch requestInfo.Verb {
+		case "get":
+			handlers.GetResource(storage, nil, requestScope)(w, req)
+			return
+		case "update":
+			if terminating {
+				http.Error(w, fmt.Sprintf("%v not allowed while CustomResourceDefinition is terminating", requestInfo.Verb), http.StatusMethodNotAllowed)
+				return
+			}
+			handlers.UpdateResource(storage, requestScope, discovery.NewUnstructuredObjectTyper(nil), r.admission)(w, req)
 			return
 		}
-		handler := handlers.UpdateResource(storage, requestScope, discovery.NewUnstructuredObjectTyper(nil), r.admission)
-		handler(w, req)
-		return
-	case "patch":
-		if terminating {
-			http.Error(w, fmt.Sprintf("%v not allowed while CustomResourceDefinition is terminating", requestInfo.Verb), http.StatusMethodNotAllowed)
-			return
-		}
-		handler := handlers.PatchResource(storage, requestScope, r.admission, unstructured.UnstructuredObjectConverter{})
-		handler(w, req)
-		return
-	case "delete":
-		allowsOptions := true
-		handler := handlers.DeleteResource(storage, allowsOptions, requestScope, r.admission)
-		handler(w, req)
-		return
-	case "deletecollection":
-		checkBody := true
-		handler := handlers.DeleteCollection(storage, checkBody, requestScope, r.admission)
-		handler(w, req)
-		return
 
 	default:
-		http.Error(w, fmt.Sprintf("unhandled verb %q", requestInfo.Verb), http.StatusMethodNotAllowed)
-		return
+		requestScope = crdInfo.requestScope
+		switch requestInfo.Verb {
+		case "get":
+			handlers.GetResource(storage, storage, requestScope)(w, req)
+			return
+		case "list":
+			forceWatch := false
+			handlers.ListResource(storage, storage, requestScope, forceWatch, minRequestTimeout)(w, req)
+			return
+		case "watch":
+			forceWatch := true
+			handlers.ListResource(storage, storage, requestScope, forceWatch, minRequestTimeout)(w, req)
+			return
+		case "create":
+			if terminating {
+				http.Error(w, fmt.Sprintf("%v not allowed while CustomResourceDefinition is terminating", requestInfo.Verb), http.StatusMethodNotAllowed)
+				return
+			}
+			handlers.CreateResource(storage, requestScope, discovery.NewUnstructuredObjectTyper(nil), r.admission)(w, req)
+			return
+		case "update":
+			if terminating {
+				http.Error(w, fmt.Sprintf("%v not allowed while CustomResourceDefinition is terminating", requestInfo.Verb), http.StatusMethodNotAllowed)
+				return
+			}
+			handlers.UpdateResource(storage, requestScope, discovery.NewUnstructuredObjectTyper(nil), r.admission)(w, req)
+			return
+		case "patch":
+			if terminating {
+				http.Error(w, fmt.Sprintf("%v not allowed while CustomResourceDefinition is terminating", requestInfo.Verb), http.StatusMethodNotAllowed)
+				return
+			}
+			handlers.PatchResource(storage, requestScope, r.admission, unstructured.UnstructuredObjectConverter{})(w, req)
+			return
+		case "delete":
+			allowsOptions := true
+			handlers.DeleteResource(storage, allowsOptions, requestScope, r.admission)(w, req)
+			return
+		case "deletecollection":
+			checkBody := true
+			handlers.DeleteCollection(storage, checkBody, requestScope, r.admission)(w, req)
+			return
+		}
 	}
+
+	http.Error(w, fmt.Sprintf("unhandled verb %q", requestInfo.Verb), http.StatusMethodNotAllowed)
 }
 
 // removeDeadStorage removes REST storage that isn't being used
@@ -264,7 +294,7 @@ func (r *crdHandler) removeDeadStorage() {
 		}
 		if !found {
 			glog.V(4).Infof("Removing dead CRD storage for %v", s.requestScope.Resource)
-			s.storage.DestroyFunc()
+			s.storage.CustomResource.DestroyFunc()
 			delete(storageMap, uid)
 		}
 	}
@@ -282,7 +312,7 @@ func (r *crdHandler) GetCustomResourceListerCollectionDeleter(crd *apiextensions
 	if err != nil {
 		utilruntime.HandleError(err)
 	}
-	return info.storage
+	return info.storage.CustomResource
 }
 
 func (r *crdHandler) getServingInfoFor(crd *apiextensions.CustomResourceDefinition) (*crdInfo, error) {
@@ -312,9 +342,9 @@ func (r *crdHandler) getServingInfoFor(crd *apiextensions.CustomResourceDefiniti
 	parameterCodec := runtime.NewParameterCodec(parameterScheme)
 
 	kind := schema.GroupVersionKind{Group: crd.Spec.Group, Version: crd.Spec.Version, Kind: crd.Status.AcceptedNames.Kind}
-	typer := unstructuredObjectTyper{
-		delegate:          parameterScheme,
-		unstructuredTyper: discovery.NewUnstructuredObjectTyper(nil),
+	typer := UnstructuredObjectTyper{
+		Delegate:          parameterScheme,
+		UnstructuredTyper: discovery.NewUnstructuredObjectTyper(nil),
 	}
 	creator := unstructuredCreator{}
 
@@ -328,7 +358,19 @@ func (r *crdHandler) getServingInfoFor(crd *apiextensions.CustomResourceDefiniti
 	}
 	validator := validate.NewSchemaValidator(openapiSchema, nil, "", strfmt.Default)
 
-	storage := customresource.NewREST(
+	// for the status subresource, validate only against the status schema
+	var statusValidator *validate.SchemaValidator
+	if crd.Spec.SubResources != nil && crd.Spec.SubResources.Status != nil {
+		statusSchema := openapiSchema.SchemaProps.Properties["status"]
+		statusValidator = validate.NewSchemaValidator(&statusSchema, nil, "", strfmt.Default)
+	}
+
+	var scale *apiextensions.CustomResourceSubResourceScale
+	if crd.Spec.SubResources != nil && crd.Spec.SubResources.Scale != nil {
+		scale = crd.Spec.SubResources.Scale
+	}
+
+	customResourceStorage := customresource.NewStorage(
 		schema.GroupResource{Group: crd.Spec.Group, Resource: crd.Status.AcceptedNames.Plural},
 		schema.GroupVersionKind{Group: crd.Spec.Group, Version: crd.Spec.Version, Kind: crd.Status.AcceptedNames.ListKind},
 		customresource.NewStrategy(
@@ -336,8 +378,9 @@ func (r *crdHandler) getServingInfoFor(crd *apiextensions.CustomResourceDefiniti
 			crd.Spec.Scope == apiextensions.NamespaceScoped,
 			kind,
 			validator,
+			statusValidator,
 		),
-		r.restOptionsGetter,
+		r.restOptionsGetter, scale,
 	)
 
 	selfLinkPrefix := ""
@@ -377,9 +420,8 @@ func (r *crdHandler) getServingInfoFor(crd *apiextensions.CustomResourceDefiniti
 		Typer:           typer,
 		UnsafeConvertor: unstructured.UnstructuredObjectConverter{},
 
-		Resource:    schema.GroupVersionResource{Group: crd.Spec.Group, Version: crd.Spec.Version, Resource: crd.Status.AcceptedNames.Plural},
-		Kind:        kind,
-		Subresource: "",
+		Resource: schema.GroupVersionResource{Group: crd.Spec.Group, Version: crd.Spec.Version, Resource: crd.Status.AcceptedNames.Plural},
+		Kind:     kind,
 
 		MetaGroupVersion: metav1.SchemeGroupVersion,
 	}
@@ -388,9 +430,13 @@ func (r *crdHandler) getServingInfoFor(crd *apiextensions.CustomResourceDefiniti
 		spec:          &crd.Spec,
 		acceptedNames: &crd.Status.AcceptedNames,
 
-		storage:      storage,
-		requestScope: requestScope,
+		storage:            customResourceStorage,
+		requestScope:       requestScope,
+		scaleRequestScope:  requestScope, // shallow copy
+		statusRequestScope: requestScope, // shallow copy
 	}
+	ret.scaleRequestScope.Subresource = "scale"
+	ret.statusRequestScope.Subresource = "status"
 
 	storageMap2 := make(crdStorageMap, len(storageMap))
 
@@ -447,7 +493,7 @@ func (c *crdHandler) updateCustomResourceDefinition(oldObj, newObj interface{}) 
 	// as it is used without locking elsewhere
 	for k, v := range storageMap {
 		if k == oldCRD.UID {
-			v.storage.DestroyFunc()
+			v.storage.CustomResource.DestroyFunc()
 			continue
 		}
 		storageMap2[k] = v
@@ -497,21 +543,21 @@ func (d unstructuredDecoder) Decode(data []byte, defaults *schema.GroupVersionKi
 	return unstructured.UnstructuredJSONScheme.Decode(data, defaults, into)
 }
 
-type unstructuredObjectTyper struct {
-	delegate          runtime.ObjectTyper
-	unstructuredTyper runtime.ObjectTyper
+type UnstructuredObjectTyper struct {
+	Delegate          runtime.ObjectTyper
+	UnstructuredTyper runtime.ObjectTyper
 }
 
-func (t unstructuredObjectTyper) ObjectKinds(obj runtime.Object) ([]schema.GroupVersionKind, bool, error) {
+func (t UnstructuredObjectTyper) ObjectKinds(obj runtime.Object) ([]schema.GroupVersionKind, bool, error) {
 	// Delegate for things other than Unstructured.
 	if _, ok := obj.(runtime.Unstructured); !ok {
-		return t.delegate.ObjectKinds(obj)
+		return t.Delegate.ObjectKinds(obj)
 	}
-	return t.unstructuredTyper.ObjectKinds(obj)
+	return t.UnstructuredTyper.ObjectKinds(obj)
 }
 
-func (t unstructuredObjectTyper) Recognizes(gvk schema.GroupVersionKind) bool {
-	return t.delegate.Recognizes(gvk) || t.unstructuredTyper.Recognizes(gvk)
+func (t UnstructuredObjectTyper) Recognizes(gvk schema.GroupVersionKind) bool {
+	return t.Delegate.Recognizes(gvk) || t.UnstructuredTyper.Recognizes(gvk)
 }
 
 var crEncoderInstance = crEncoder{}

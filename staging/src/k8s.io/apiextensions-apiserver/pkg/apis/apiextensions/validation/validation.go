@@ -111,6 +111,12 @@ func ValidateCustomResourceDefinitionSpec(spec *apiextensions.CustomResourceDefi
 		allErrs = append(allErrs, field.Forbidden(fldPath.Child("validation"), "disabled by feature-gate"))
 	}
 
+	if utilfeature.DefaultFeatureGate.Enabled(apiextensionsfeatures.CustomResourceSubResources) {
+		allErrs = append(allErrs, ValidateCustomResourceDefinitionSubResources(spec.SubResources, fldPath.Child("subResources"))...)
+	} else if spec.SubResources != nil {
+		allErrs = append(allErrs, field.Forbidden(fldPath.Child("subResources"), "disabled by feature-gate"))
+	}
+
 	return allErrs
 }
 
@@ -324,6 +330,27 @@ func (v *specStandardValidatorV3) validate(schema *apiextensions.JSONSchemaProps
 
 	if schema.Items != nil && len(schema.Items.JSONSchemas) != 0 {
 		allErrs = append(allErrs, field.Forbidden(fldPath.Child("items"), "items must be a schema object and not an array"))
+	}
+
+	return allErrs
+}
+
+// ValidateCustomResourceDefinitionSubResources statically validates
+func ValidateCustomResourceDefinitionSubResources(subResources *apiextensions.CustomResourceSubResources, fldPath *field.Path) field.ErrorList {
+	allErrs := field.ErrorList{}
+
+	if subResources == nil {
+		return allErrs
+	}
+
+	if subResources.Scale != nil {
+		if len(subResources.Scale.SpecReplicasPath) == 0 {
+			allErrs = append(allErrs, field.Invalid(fldPath.Child("scale.specReplicasPath"), subResources.Scale.SpecReplicasPath, "specReplicasPath cannot be empty"))
+		}
+
+		if subResources.Scale.ScaleGroupVersion != "autoscaling/v1" {
+			allErrs = append(allErrs, field.Invalid(fldPath.Child("scale.scaleGroupVersion"), subResources.Scale.ScaleGroupVersion, "scaleGroupVersion must be autoscaling/v1"))
+		}
 	}
 
 	return allErrs
