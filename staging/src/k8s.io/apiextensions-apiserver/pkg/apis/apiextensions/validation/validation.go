@@ -18,6 +18,7 @@ package validation
 
 import (
 	"fmt"
+	"reflect"
 	"strings"
 
 	genericvalidation "k8s.io/apimachinery/pkg/api/validation"
@@ -107,7 +108,13 @@ func ValidateCustomResourceDefinitionSpec(spec *apiextensions.CustomResourceDefi
 	if utilfeature.DefaultFeatureGate.Enabled(apiextensionsfeatures.CustomResourceValidation) {
 		allErrs = append(allErrs, ValidateCustomResourceDefinitionValidation(spec.Validation, fldPath.Child("validation"))...)
 	} else if spec.Validation != nil {
-		allErrs = append(allErrs, field.Forbidden(fldPath.Child("validation"), "disabled by feature-gate"))
+		allErrs = append(allErrs, field.Forbidden(fldPath.Child("validation"), "disabled by feature-gate CustomResourceValidation"))
+	}
+
+	if utilfeature.DefaultFeatureGate.Enabled(apiextensionsfeatures.CustomResourceSubResources) {
+		allErrs = append(allErrs, ValidateCustomResourceDefinitionSubResources(spec.SubResources, fldPath.Child("subResources"))...)
+	} else if spec.SubResources != nil {
+		allErrs = append(allErrs, field.Forbidden(fldPath.Child("subResources"), "disabled by feature-gate CustomResourceSubresources"))
 	}
 
 	return allErrs
@@ -182,9 +189,27 @@ func ValidateCustomResourceDefinitionValidation(customResourceValidation *apiext
 		return allErrs
 	}
 
-	if customResourceValidation.OpenAPIV3Schema != nil {
+	if schema := customResourceValidation.OpenAPIV3Schema; schema != nil {
+		// if subresources are enabled, only properties is allowed inside the root schema
+		if utilfeature.DefaultFeatureGate.Enabled(apiextensionsfeatures.CustomResourceSubResources) {
+			v := reflect.ValueOf(schema).Elem()
+			fieldsPresent := 0
+
+			for i := 0; i < v.NumField(); i++ {
+				field := v.Field(i).Interface()
+				if !reflect.DeepEqual(field, reflect.Zero(reflect.TypeOf(field)).Interface()) {
+					fieldsPresent++
+				}
+			}
+
+			if fieldsPresent > 1 || (fieldsPresent == 1 && v.FieldByName("Properties").IsNil()) {
+				allErrs = append(allErrs, field.Invalid(fldPath.Child("openAPIV3Schema"), *schema, fmt.Sprintf("if subresources for custom resources are enabled, only properties can be used at the root of the schema")))
+				return allErrs
+			}
+		}
+
 		openAPIV3Schema := &specStandardValidatorV3{}
-		allErrs = append(allErrs, ValidateCustomResourceDefinitionOpenAPISchema(customResourceValidation.OpenAPIV3Schema, fldPath.Child("openAPIV3Schema"), openAPIV3Schema)...)
+		allErrs = append(allErrs, ValidateCustomResourceDefinitionOpenAPISchema(schema, fldPath.Child("openAPIV3Schema"), openAPIV3Schema)...)
 	}
 
 	// if validation passed otherwise, make sure we can actually construct a schema validator from this custom resource validation.
@@ -322,6 +347,74 @@ func (v *specStandardValidatorV3) validate(schema *apiextensions.JSONSchemaProps
 
 	if schema.Items != nil && len(schema.Items.JSONSchemas) != 0 {
 		allErrs = append(allErrs, field.Forbidden(fldPath.Child("items"), "items must be a schema object and not an array"))
+	}
+
+	return allErrs
+}
+
+// ValidateCustomResourceDefinitionSubResources statically validates
+func ValidateCustomResourceDefinitionSubResources(subResources *apiextensions.CustomResourceSubResources, fldPath *field.Path) field.ErrorList {
+	allErrs := field.ErrorList{}
+
+	if subResources == nil {
+		return allErrs
+	}
+
+	if subResources.Scale != nil {
+		if len(subResources.Scale.SpecReplicasPath) == 0 {
+			allErrs = append(allErrs, field.Required(fldPath.Child("scale.specReplicasPath"), ""))
+		} else {
+			// should be constrained json path under .spec
+			if errs := validateSimpleJSONPath(subResources.Scale.SpecReplicasPath, fldPath.Child("scale.specReplicasPath")); len(errs) > 0 {
+				allErrs = append(allErrs, errs...)
+			} else if !strings.HasPrefix(subResources.Scale.SpecReplicasPath, ".spec.") {
+				allErrs = append(allErrs, field.Invalid(fldPath.Child("scale.specReplicasPath"), subResources.Scale.SpecReplicasPath, "should be a json path under .spec"))
+			}
+		}
+
+		if len(subResources.Scale.StatusReplicasPath) == 0 {
+			allErrs = append(allErrs, field.Required(fldPath.Child("scale.statusReplicasPath"), ""))
+		} else {
+			// should be constrained json path under .status
+			if errs := validateSimpleJSONPath(subResources.Scale.StatusReplicasPath, fldPath.Child("scale.statusReplicasPath")); len(errs) > 0 {
+				allErrs = append(allErrs, errs...)
+			} else if !strings.HasPrefix(subResources.Scale.StatusReplicasPath, ".status.") {
+				allErrs = append(allErrs, field.Invalid(fldPath.Child("scale.statusReplicasPath"), subResources.Scale.StatusReplicasPath, "should be a json path under .status"))
+			}
+		}
+
+		// if labelSelectorPath is present, it should be a constrained json path under .status
+		if len(subResources.Scale.LabelSelectorPath) > 0 {
+			if errs := validateSimpleJSONPath(subResources.Scale.LabelSelectorPath, fldPath.Child("scale.labelSelectorPath")); len(errs) > 0 {
+				allErrs = append(allErrs, errs...)
+			} else if !strings.HasPrefix(subResources.Scale.LabelSelectorPath, ".status.") {
+				allErrs = append(allErrs, field.Invalid(fldPath.Child("scale.labelSelectorPath"), subResources.Scale.LabelSelectorPath, "should be a json path under .status"))
+			}
+		}
+
+		// today, we only allow autoscaling/v1
+		if len(subResources.Scale.ScaleGroupVersion) == 0 {
+			allErrs = append(allErrs, field.Required(fldPath.Child("scale.scaleGroupVersion"), ""))
+		} else if subResources.Scale.ScaleGroupVersion != "autoscaling/v1" {
+			allErrs = append(allErrs, field.Invalid(fldPath.Child("scale.scaleGroupVersion"), subResources.Scale.ScaleGroupVersion, "must be autoscaling/v1"))
+		}
+	}
+
+	return allErrs
+}
+
+func validateSimpleJSONPath(s string, fldPath *field.Path) field.ErrorList {
+	allErrs := field.ErrorList{}
+
+	switch {
+	case len(s) == 0:
+		allErrs = append(allErrs, field.Invalid(fldPath, s, "must not be empty"))
+	case s[0] != '.':
+		allErrs = append(allErrs, field.Invalid(fldPath, s, "must be a simple json path starting with ."))
+	case s != ".":
+		if cs := strings.Split(s[1:], "."); len(cs) < 1 {
+			allErrs = append(allErrs, field.Invalid(fldPath, s, "must be a json path in the dot notation"))
+		}
 	}
 
 	return allErrs
