@@ -265,5 +265,6 @@ var defaultKubernetesFeatureGates = map[utilfeature.Feature]utilfeature.FeatureS
 
 	// inherited features from apiextensions-apiserver, relisted here to get a conflict if it is changed
 	// unintentionally on either side:
-	apiextensionsfeatures.CustomResourceValidation: {Default: true, PreRelease: utilfeature.Beta},
+	apiextensionsfeatures.CustomResourceValidation: {Default: false, PreRelease: utilfeature.Beta},
+	apiextensionsfeatures.CustomResourceDefaulting: {Default: false, PreRelease: utilfeature.Alpha},
 }
