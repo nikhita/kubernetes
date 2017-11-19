@@ -452,7 +452,7 @@
 		},
 		{
 			"ImportPath": "github.com/json-iterator/go",
-			"Rev": "36b14963da70d11297d313183d7e6388c8510e1e"
+			"Rev": "f7279a603edee96fe7764d3de9c6ff8cf9970994"
 		},
 		{
 			"ImportPath": "github.com/juju/ratelimit",
