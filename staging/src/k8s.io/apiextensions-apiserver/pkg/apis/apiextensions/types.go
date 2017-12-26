@@ -30,6 +30,8 @@ type CustomResourceDefinitionSpec struct {
 	Scope ResourceScope
 	// Validation describes the validation methods for CustomResources
 	Validation *CustomResourceValidation
+	// StrategicMergePatch describes the PatchMetadata for a JSONPath in the CustomResource.
+	StrategicMergePatch []PatchMetadata
 }
 
 // CustomResourceDefinitionNames indicates the names to serve this CustomResourceDefinition
@@ -145,4 +147,15 @@ type CustomResourceDefinitionList struct {
 type CustomResourceValidation struct {
 	// OpenAPIV3Schema is the OpenAPI v3 schema to be validated against.
 	OpenAPIV3Schema *JSONSchemaProps
+}
+
+// PatchMetadata describes the JSONPath and its corresponding PatchMergeKey and PatchStrategy
+// for the strategic merge patch of CustomResources.
+type PatchMetadata struct {
+	// JSONPath specifies the JSONPath for which the PatchMetadata is defined.
+	JSONPath string
+	// PatchMergeKey specifies the patch merge key for a particular JSONPath.
+	PatchMergeKey string
+	// PatchStrategies specifies the patch strategies for a particular JSONPath.
+	PatchStrategies []string
 }
