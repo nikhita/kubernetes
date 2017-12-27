@@ -35,7 +35,7 @@ const (
 	CustomResourceValidation utilfeature.Feature = "CustomResourceValidation"
 
 	// owner: @sttts, @nikhita
-	// alpha: v1.9
+	// alpha: v1.10
 	//
 	// CustomResourceDefaulting enables defaulting for CustomResources with default given in the validation schema.
 	CustomResourceDefaulting utilfeature.Feature = "CustomResourceDefaulting"
