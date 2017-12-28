@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"net/http"
 	"path"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -41,6 +42,7 @@ import (
 	"k8s.io/apiserver/pkg/admission"
 	"k8s.io/apiserver/pkg/endpoints/handlers"
 	"k8s.io/apiserver/pkg/endpoints/handlers/responsewriters"
+	"k8s.io/apiserver/pkg/endpoints/metrics"
 	apirequest "k8s.io/apiserver/pkg/endpoints/request"
 	"k8s.io/apiserver/pkg/registry/generic"
 	genericregistry "k8s.io/apiserver/pkg/registry/generic/registry"
@@ -187,19 +189,27 @@ func (r *crdHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	requestScope := crdInfo.requestScope
 	minRequestTimeout := 1 * time.Minute
 
+	verb := strings.ToUpper(requestInfo.Verb)
+	resource := requestInfo.Resource
+	subresource := requestInfo.Subresource
+	scope := metrics.CleanScope(requestInfo)
+
 	switch requestInfo.Verb {
 	case "get":
 		handler := handlers.GetResource(storage, storage, requestScope)
+		handler = metrics.InstrumentHandlerFunc(verb, resource, subresource, scope, handler)
 		handler(w, req)
 		return
 	case "list":
 		forceWatch := false
 		handler := handlers.ListResource(storage, storage, requestScope, forceWatch, minRequestTimeout)
+		handler = metrics.InstrumentHandlerFunc(verb, resource, subresource, scope, handler)
 		handler(w, req)
 		return
 	case "watch":
 		forceWatch := true
 		handler := handlers.ListResource(storage, storage, requestScope, forceWatch, minRequestTimeout)
+		handler = metrics.InstrumentHandlerFunc(verb, resource, subresource, scope, handler)
 		handler(w, req)
 		return
 	case "create":
@@ -208,6 +218,7 @@ func (r *crdHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 			return
 		}
 		handler := handlers.CreateResource(storage, requestScope, discovery.NewUnstructuredObjectTyper(nil), r.admission)
+		handler = metrics.InstrumentHandlerFunc(verb, resource, subresource, scope, handler)
 		handler(w, req)
 		return
 	case "update":
@@ -216,6 +227,7 @@ func (r *crdHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 			return
 		}
 		handler := handlers.UpdateResource(storage, requestScope, discovery.NewUnstructuredObjectTyper(nil), r.admission)
+		handler = metrics.InstrumentHandlerFunc(verb, resource, subresource, scope, handler)
 		handler(w, req)
 		return
 	case "patch":
@@ -228,16 +240,19 @@ func (r *crdHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 			string(types.MergePatchType),
 		}
 		handler := handlers.PatchResource(storage, requestScope, r.admission, unstructured.UnstructuredObjectConverter{}, supportedTypes)
+		handler = metrics.InstrumentHandlerFunc(verb, resource, subresource, scope, handler)
 		handler(w, req)
 		return
 	case "delete":
 		allowsOptions := true
 		handler := handlers.DeleteResource(storage, allowsOptions, requestScope, r.admission)
+		handler = metrics.InstrumentHandlerFunc(verb, resource, subresource, scope, handler)
 		handler(w, req)
 		return
 	case "deletecollection":
 		checkBody := true
 		handler := handlers.DeleteCollection(storage, checkBody, requestScope, r.admission)
+		handler = metrics.InstrumentHandlerFunc(verb, resource, subresource, scope, handler)
 		handler(w, req)
 		return
 
