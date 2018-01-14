@@ -107,6 +107,10 @@ message CustomResourceDefinitionSpec {
   // Validation describes the validation methods for CustomResources
   // +optional
   optional CustomResourceValidation validation = 5;
+
+  // StrategicMergePatch describes the PatchMetadata for a JSONPath in the CustomResource.
+  // +optional
+  repeated PatchMetadata strategicMergePatch = 6;
 }
 
 // CustomResourceDefinitionStatus indicates the state of the CustomResourceDefinition
@@ -234,5 +238,18 @@ message JSONSchemaPropsOrStringArray {
   optional JSONSchemaProps schema = 1;
 
   repeated string property = 2;
+}
+
+// PatchMetadata describes the JSONPath and its corresponding PatchMergeKey and PatchStrategy
+// for the strategic merge patch of CustomResources.
+message PatchMetadata {
+  // JSONPath specifies the JSONPath for which the PatchMetadata is defined.
+  optional string jsonPath = 1;
+
+  // PatchMergeKey specifies the patch merge key for a particular JSONPath.
+  optional string patchMergeKey = 2;
+
+  // PatchStrategies specifies the patch strategies for a particular JSONPath.
+  repeated string patchStrategy = 3;
 }
 

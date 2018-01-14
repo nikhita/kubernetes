@@ -108,7 +108,13 @@ func ValidateCustomResourceDefinitionSpec(spec *apiextensions.CustomResourceDefi
 	if utilfeature.DefaultFeatureGate.Enabled(apiextensionsfeatures.CustomResourceValidation) {
 		allErrs = append(allErrs, ValidateCustomResourceDefinitionValidation(spec.Validation, fldPath.Child("validation"))...)
 	} else if spec.Validation != nil {
-		allErrs = append(allErrs, field.Forbidden(fldPath.Child("validation"), "disabled by feature-gate"))
+		allErrs = append(allErrs, field.Forbidden(fldPath.Child("validation"), "disabled by feature-gate CustomResourceValidation"))
+	}
+
+	if utilfeature.DefaultFeatureGate.Enabled(apiextensionsfeatures.CustomResourceStrategicMergePatch) {
+		allErrs = append(allErrs, ValidateCustomResourceDefinitionStrategicMergePatch(spec.StrategicMergePatch, fldPath.Child("strategicMergePatch"))...)
+	} else if spec.StrategicMergePatch != nil {
+		allErrs = append(allErrs, field.Forbidden(fldPath.Child("strategicMergePatch"), "disabled by feature-gate CustomResourceStrategicMergePatch"))
 	}
 
 	return allErrs
@@ -324,6 +330,22 @@ func (v *specStandardValidatorV3) validate(schema *apiextensions.JSONSchemaProps
 
 	if schema.Items != nil && len(schema.Items.JSONSchemas) != 0 {
 		allErrs = append(allErrs, field.Forbidden(fldPath.Child("items"), "items must be a schema object and not an array"))
+	}
+
+	return allErrs
+}
+
+func ValidateCustomResourceDefinitionStrategicMergePatch(strategicMergePatch []apiextensions.PatchMetadata, fldPath *field.Path) field.ErrorList {
+	allErrs := field.ErrorList{}
+
+	for _, PatchMetadata := range strategicMergePatch {
+		// TODO: any other validations?
+		switch PatchMetadata.PatchMergeKey {
+		case "merge", "retainKeys":
+			continue
+		default:
+			allErrs = append(allErrs, field.Invalid(fldPath.Child("patchMergeKey"), PatchMetadata.PatchMergeKey, "only merge and retainKeys are supported for patchMergeKey"))
+		}
 	}
 
 	return allErrs

@@ -31,6 +31,9 @@ type CustomResourceDefinitionSpec struct {
 	// Validation describes the validation methods for CustomResources
 	// +optional
 	Validation *CustomResourceValidation `json:"validation,omitempty" protobuf:"bytes,5,opt,name=validation"`
+	// StrategicMergePatch describes the PatchMetadata for a JSONPath in the CustomResource.
+	// +optional
+	StrategicMergePatch []PatchMetadata `json:"strategicMergePatch,omitempty" protobuf:"bytes,6,rep,name=strategicMergePatch"`
 }
 
 // CustomResourceDefinitionNames indicates the names to serve this CustomResourceDefinition
@@ -146,4 +149,15 @@ type CustomResourceDefinitionList struct {
 type CustomResourceValidation struct {
 	// OpenAPIV3Schema is the OpenAPI v3 schema to be validated against.
 	OpenAPIV3Schema *JSONSchemaProps `json:"openAPIV3Schema,omitempty" protobuf:"bytes,1,opt,name=openAPIV3Schema"`
+}
+
+// PatchMetadata describes the JSONPath and its corresponding PatchMergeKey and PatchStrategy
+// for the strategic merge patch of CustomResources.
+type PatchMetadata struct {
+	// JSONPath specifies the JSONPath for which the PatchMetadata is defined.
+	JSONPath string `json:"jsonPath" protobuf:"bytes,1,opt,name=jsonPath"`
+	// PatchMergeKey specifies the patch merge key for a particular JSONPath.
+	PatchMergeKey string `json:"patchMergeKey" protobuf:"bytes,2,opt,name=patchMergeKey"`
+	// PatchStrategies specifies the patch strategies for a particular JSONPath.
+	PatchStrategies []string `json:"patchStrategies" protobuf:"bytes,3,opt,name=patchStrategy"`
 }
