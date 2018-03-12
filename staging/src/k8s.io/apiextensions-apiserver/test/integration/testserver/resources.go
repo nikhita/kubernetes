@@ -240,7 +240,8 @@ func checkForWatchCachePrimed(crd *apiextensionsv1beta1.CustomResourceDefinition
 			},
 			"alpha":   "foo_123",
 			"beta":    10,
-			"gamma":   "bar",
+			// this is a valid value
+			"gamma":   1,
 			"delta":   "hello",
 			"epsilon": "foobar",
 		},

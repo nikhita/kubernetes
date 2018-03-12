@@ -117,17 +117,14 @@ func newNoxuValidationCRD(scope apiextensionsv1beta1.ResourceScope) *apiextensio
 							Minimum:     float64Ptr(10),
 						},
 						"gamma": {
-							Description: "Gamma is restricted to foo, bar and baz",
-							Type:        "string",
+							Description: "Gamma is restricted to 1 or 3",
+							Type:        "number",
 							Enum: []apiextensionsv1beta1.JSON{
 								{
-									Raw: []byte(`"foo"`),
+									Raw: []byte(`1`),
 								},
 								{
-									Raw: []byte(`"bar"`),
-								},
-								{
-									Raw: []byte(`"baz"`),
+									Raw: []byte(`3`),
 								},
 							},
 						},
@@ -162,7 +159,9 @@ func newNoxuValidationInstance(namespace, name string) *unstructured.Unstructure
 			},
 			"alpha": "foo_123",
 			"beta":  10,
-			"gamma": "bar",
+			// this is an invalid value
+			// changing this to 1 or 3 will pass the test
+			"gamma": 2,
 			"delta": "hello",
 		},
 	}
@@ -183,6 +182,8 @@ func TestCustomResourceValidation(t *testing.T) {
 
 	ns := "not-the-default"
 	noxuResourceClient := NewNamespacedCustomResourceClient(ns, noxuVersionClient, noxuDefinition)
+
+	// will fail or pass here
 	_, err = instantiateCustomResource(t, newNoxuValidationInstance(ns, "foo"), noxuResourceClient, noxuDefinition)
 	if err != nil {
 		t.Fatalf("unable to create noxu instance: %v", err)
