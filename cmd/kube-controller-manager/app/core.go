@@ -260,6 +260,20 @@ func startPodGCController(ctx ControllerContext) (bool, error) {
 
 func startResourceQuotaController(ctx ControllerContext) (bool, error) {
 	resourceQuotaControllerClient := ctx.ClientBuilder.ClientOrDie("resourcequota-controller")
+
+	// Use a discovery client capable of being refreshed.
+	discoveryClient := cacheddiscovery.NewMemCacheClient(resourceQuotaControllerClient.Discovery())
+	restMapper := discovery.NewDeferredDiscoveryRESTMapper(discoveryClient, meta.InterfacesForUnstructured)
+	restMapper.Reset()
+
+	config := ctx.ClientBuilder.ConfigOrDie("resourcequota-controller")
+	config.ContentConfig = dynamic.ContentConfig()
+	// TODO: Make NewMetadataCodecFactory support arbitrary (non-compiled)
+	// resource types. Otherwise we'll be storing full Unstructured data in our
+	// caches for custom resources. Consider porting it to work with
+	// metav1beta1.PartialObjectMetadata.
+	metaOnlyClientPool := dynamic.NewClientPool(config, restMapper, dynamic.LegacyAPIPathResolverFunc)
+
 	discoveryFunc := resourceQuotaControllerClient.Discovery().ServerPreferredNamespacedResources
 	listerFuncForResource := generic.ListerFuncForResourceFunc(ctx.InformerFactory.ForResource)
 	quotaConfiguration := quotainstall.NewQuotaConfigurationForControllers(listerFuncForResource)
@@ -274,6 +288,8 @@ func startResourceQuotaController(ctx ControllerContext) (bool, error) {
 		IgnoredResourcesFunc:      quotaConfiguration.IgnoredResources,
 		InformersStarted:          ctx.InformersStarted,
 		Registry:                  generic.NewRegistry(quotaConfiguration.Evaluators()),
+		MetaOnlyClientPool:        metaOnlyClientPool,
+		RestMapper:                restMapper,
 	}
 	if resourceQuotaControllerClient.CoreV1().RESTClient().GetRateLimiter() != nil {
 		if err := metrics.RegisterMetricAndTrackRateLimiterUsage("resource_quota_controller", resourceQuotaControllerClient.CoreV1().RESTClient().GetRateLimiter()); err != nil {
@@ -285,6 +301,8 @@ func startResourceQuotaController(ctx ControllerContext) (bool, error) {
 	if err != nil {
 		return false, err
 	}
+
+	// Start the resourceQuota controller
 	go resourceQuotaController.Run(int(ctx.ComponentConfig.ResourceQuotaController.ConcurrentResourceQuotaSyncs), ctx.Stop)
 
 	// Periodically the quota controller to detect new resource types

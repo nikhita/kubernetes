@@ -27,12 +27,14 @@ import (
 	"k8s.io/api/core/v1"
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/discovery"
+	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/informers"
 	coreinformers "k8s.io/client-go/informers/core/v1"
 	corev1client "k8s.io/client-go/kubernetes/typed/core/v1"
@@ -78,6 +80,11 @@ type ResourceQuotaControllerOptions struct {
 	InformerFactory InformerFactory
 	// Controls full resync of objects monitored for replenishment.
 	ReplenishmentResyncPeriod controller.ResyncPeriodFunc
+	// metaOnlyClientPool uses a special codec, which removes fields except for
+	// apiVersion, kind, and metadata during decoding.
+	MetaOnlyClientPool dynamic.ClientPool
+	// TODO: add comment
+	RestMapper meta.RESTMapper
 }
 
 // ResourceQuotaController is responsible for tracking quota usage status in the system
@@ -150,13 +157,15 @@ func NewResourceQuotaController(options *ResourceQuotaControllerOptions) (*Resou
 
 	if options.DiscoveryFunc != nil {
 		qm := &QuotaMonitor{
-			informersStarted:  options.InformersStarted,
-			informerFactory:   options.InformerFactory,
-			ignoredResources:  options.IgnoredResourcesFunc(),
-			resourceChanges:   workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "resource_quota_controller_resource_changes"),
-			resyncPeriod:      options.ReplenishmentResyncPeriod,
-			replenishmentFunc: rq.replenishQuota,
-			registry:          rq.registry,
+			informersStarted:   options.InformersStarted,
+			informerFactory:    options.InformerFactory,
+			ignoredResources:   options.IgnoredResourcesFunc(),
+			resourceChanges:    workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "resource_quota_controller_resource_changes"),
+			resyncPeriod:       options.ReplenishmentResyncPeriod,
+			replenishmentFunc:  rq.replenishQuota,
+			registry:           rq.registry,
+			metaOnlyClientPool: options.MetaOnlyClientPool,
+			restMapper:         options.RestMapper,
 		}
 
 		rq.quotaMonitor = qm
@@ -443,7 +452,18 @@ func (rq *ResourceQuotaController) Sync(discoveryFunc NamespacedResourcesFunc, p
 		rq.workerLock.Lock()
 		defer rq.workerLock.Unlock()
 
+		// TODO: reset the restMapper here
+		// Currently, the restMapper is private in QuotaMonitor, so can't be used here.
+
 		// Perform the monitor resync and wait for controllers to report cache sync.
+		//
+		// NOTE: It's possible that newResources will diverge from the resources
+		// discovered by restMapper during the call to Reset, since they are
+		// distinct discovery clients invalidated at different times. For example,
+		// newResources may contain resources not returned in the restMapper's
+		// discovery call if the resources appeared in-between the calls. In that
+		// case, the restMapper will fail to map some of newResources until the next
+		// sync period.
 		if err := rq.resyncMonitors(newResources); err != nil {
 			utilruntime.HandleError(fmt.Errorf("failed to sync resource monitors: %v", err))
 			return
