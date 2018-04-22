@@ -172,6 +172,7 @@ func NewResourceQuotaController(options *ResourceQuotaControllerOptions) (*Resou
 
 		// do initial quota monitor setup
 		resources, err := GetQuotableResources(options.DiscoveryFunc)
+		fmt.Println(resources)
 		if err != nil {
 			return nil, err
 		}
