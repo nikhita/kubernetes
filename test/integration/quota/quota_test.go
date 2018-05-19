@@ -24,6 +24,7 @@ import (
 	"time"
 
 	"k8s.io/api/core/v1"
+	"k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
@@ -32,10 +33,10 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/informers"
-	clientset "k8s.io/client-go/kubernetes"
+	kubeclientset "k8s.io/client-go/kubernetes"
 	restclient "k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/record"
-	"k8s.io/kubernetes/pkg/client/clientset_generated/internalclientset"
+	internalclientset "k8s.io/kubernetes/pkg/client/clientset_generated/internalclientset"
 	internalinformers "k8s.io/kubernetes/pkg/client/informers/informers_generated/internalversion"
 	"k8s.io/kubernetes/pkg/controller"
 	replicationcontroller "k8s.io/kubernetes/pkg/controller/replication"
@@ -151,7 +152,7 @@ func TestQuota(t *testing.T) {
 	t.Logf("Took %v to scale up with quota", endTime.Sub(startTime))
 }
 
-func waitForQuota(t *testing.T, quota *v1.ResourceQuota, clientset *clientset.Clientset) {
+func waitForQuota(t *testing.T, quota *v1.ResourceQuota, clientset *kubeclientset.Clientset) {
 	w, err := clientset.Core().ResourceQuotas(quota.Namespace).Watch(metav1.SingleObject(metav1.ObjectMeta{Name: quota.Name}))
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -181,7 +182,7 @@ func waitForQuota(t *testing.T, quota *v1.ResourceQuota, clientset *clientset.Cl
 	}
 }
 
-func scale(t *testing.T, namespace string, clientset *clientset.Clientset) {
+func scale(t *testing.T, namespace string, clientset *kubeclientset.Clientset) {
 	target := int32(100)
 	rc := &v1.ReplicationController{
 		ObjectMeta: metav1.ObjectMeta{
@@ -369,3 +370,305 @@ func TestQuotaLimitedResourceDenial(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 }
+
+/*
+func mockDiscoveryFunc() ([]*metav1.APIResourceList, error) {
+	return []*metav1.APIResourceList{}, nil
+}
+
+type testContext struct {
+	tearDown           func()
+	qc                 *resourcequotacontroller.ResourceQuotaController
+	clientSet          kubeclientset.Interface
+	apiExtensionClient apiextensionsclientset.Interface
+	dynamicClient      dynamic.Interface
+	startQC            func(workers int)
+	// syncPeriod is how often the QC started with startQC will be resynced.
+	syncPeriod time.Duration
+}
+
+func setup(t *testing.T, workerCount int) *testContext {
+	return setupWithServer(t, kubeapiservertesting.StartTestServerOrDie(t, nil, nil, framework.SharedEtcd()), workerCount)
+}
+
+func setupWithServer(t *testing.T, result *kubeapiservertesting.TestServer, workerCount int) *testContext {
+	clientSet, err := clientset.NewForConfig(result.ClientConfig)
+	if err != nil {
+		t.Fatalf("error creating clientset: %v", err)
+	}
+
+	// Helpful stuff for testing CRD.
+	apiExtensionClient, err := apiextensionsclientset.NewForConfig(result.ClientConfig)
+	if err != nil {
+		t.Fatalf("error creating extension clientset: %v", err)
+	}
+	// CreateNewCustomResourceDefinition wants to use this namespace for verifying
+	// namespace-scoped CRD creation.
+	createNamespaceOrDie("aval", clientSet, t)
+
+	discoveryClient := cacheddiscovery.NewMemCacheClient(clientSet.Discovery())
+	restMapper := restmapper.NewDeferredDiscoveryRESTMapper(discoveryClient)
+	restMapper.Reset()
+
+	quotableResources := resourcequotacontroller.GetQuotableResources(discoveryClient)
+	config := *result.ClientConfig
+	dynamicClient, err := dynamic.NewForConfig(&config)
+	if err != nil {
+		t.Fatalf("failed to create dynamicClient: %v", err)
+	}
+	sharedInformers := informers.NewSharedInformerFactory(clientSet, 0)
+	alwaysStarted := make(chan struct{})
+	close(alwaysStarted)
+
+	gvr := schema.GroupVersionResource{Group: "example.com", Version: "v1", Resource: "foobars"}
+	resourceQuotaControllerOptions := &resourcequotacontroller.ResourceQuotaControllerOptions{
+		QuotaClient:               clientset.CoreV1(),
+		ResourceQuotaInformer:     sharedInformers.Core().V1().ResourceQuotas(),
+		ResyncPeriod:              controller.NoResyncPeriodFunc,
+		ReplenishmentResyncPeriod: controller.NoResyncPeriodFunc,
+		IgnoredResourcesFunc:      quotainstall.DefaultIgnoredResources(),
+		DiscoveryFunc:             mockDiscoveryFunc,
+		Registry:                  generic.NewRegistry(quotaConfiguration.Evaluators()),
+		InformersStarted:          alwaysStarted,
+		DynamicClient:             dynamicClient,
+		Mapper:                    rm,
+		QuotableResources:         twoResources,
+		SharedInformerFactory:     sharedInformers,
+	}
+
+	gc, err := garbagecollector.NewGarbageCollector(
+		dynamicClient,
+		restMapper,
+		deletableResources,
+		garbagecollector.DefaultIgnoredResources(),
+		sharedInformers,
+		alwaysStarted,
+	)
+	if err != nil {
+		t.Fatalf("failed to create garbage collector: %v", err)
+	}
+
+	stopCh := make(chan struct{})
+	tearDown := func() {
+		close(stopCh)
+		result.TearDownFn()
+	}
+	syncPeriod := 5 * time.Second
+	startGC := func(workers int) {
+		go wait.Until(func() {
+			// Resetting the REST mapper will also invalidate the underlying discovery
+			// client. This is a leaky abstraction and assumes behavior about the REST
+			// mapper, but we'll deal with it for now.
+			restMapper.Reset()
+		}, syncPeriod, stopCh)
+		go gc.Run(workers, stopCh)
+		go gc.Sync(clientSet.Discovery(), syncPeriod, stopCh)
+	}
+
+	if workerCount > 0 {
+		startGC(workerCount)
+	}
+
+	return &testContext{
+		tearDown:           tearDown,
+		gc:                 gc,
+		clientSet:          clientSet,
+		apiExtensionClient: apiExtensionClient,
+		dynamicClient:      dynamicClient,
+		startGC:            startGC,
+		syncPeriod:         syncPeriod,
+	}
+}
+
+func createNamespaceOrDie(name string, c clientset.Interface, t *testing.T) *v1.Namespace {
+	ns := &v1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: name}}
+	if _, err := c.CoreV1().Namespaces().Create(ns); err != nil {
+		t.Fatalf("failed to create namespace: %v", err)
+	}
+	falseVar := false
+	_, err := c.CoreV1().ServiceAccounts(ns.Name).Create(&v1.ServiceAccount{
+		ObjectMeta:                   metav1.ObjectMeta{Name: "default"},
+		AutomountServiceAccountToken: &falseVar,
+	})
+	if err != nil {
+		t.Fatalf("failed to create service account: %v", err)
+	}
+	return ns
+}
+
+func createRandomCustomResourceDefinition(
+	t *testing.T, apiExtensionClient apiextensionsclientset.Interface,
+	dynamicClient dynamic.Interface,
+	namespace string,
+) (*apiextensionsv1beta1.CustomResourceDefinition, dynamic.ResourceInterface) {
+	// Create a random custom resource definition and ensure it's available for
+	// use.
+	definition := apiextensionstestserver.NewRandomNameCustomResourceDefinition(apiextensionsv1beta1.NamespaceScoped)
+
+	err := apiextensionstestserver.CreateNewCustomResourceDefinition(definition, apiExtensionClient, dynamicClient)
+	if err != nil {
+		t.Fatalf("failed to create CustomResourceDefinition: %v", err)
+	}
+
+	// Get a client for the custom resource.
+	gvr := schema.GroupVersionResource{Group: definition.Spec.Group, Version: definition.Spec.Version, Resource: definition.Spec.Names.Plural}
+
+	resourceClient := dynamicClient.Resource(gvr).Namespace(namespace)
+
+	return definition, resourceClient
+}
+
+func newResourceQuota(name, namespace string) *v1.ResourceQuota {
+	quota := &v1.ResourceQuota{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: namespace,
+			Name:      name,
+		},
+		Spec: v1.ResourceQuotaSpec{
+			Hard: v1.ResourceList{
+				"count/foobar.example.com": resource.MustParse("4"),
+			},
+		},
+		Status: v1.ResourceQuotaStatus{
+			Hard: v1.ResourceList{
+				"count/foobar.example.com": resource.MustParse("4"),
+			},
+		},
+	}
+	return quota
+}
+
+type testContext struct {
+	tearDown           func()
+	gc                 *garbagecollector.GarbageCollector
+	clientSet          clientset.Interface
+	apiExtensionClient apiextensionsclientset.Interface
+	dynamicClient      dynamic.Interface
+	startGC            func(workers int)
+	// syncPeriod is how often the GC started with startGC will be resynced.
+	syncPeriod time.Duration
+}
+
+// if workerCount > 0, will start the GC, otherwise it's up to the caller to Run() the GC.
+func setup(t *testing.T, workerCount int) *testContext {
+	return setupWithServer(t, kubeapiservertesting.StartTestServerOrDie(t, nil, nil, framework.SharedEtcd()), workerCount)
+}
+
+func setupWithServer(t *testing.T, result *kubeapiservertesting.TestServer, workerCount int) *testContext {
+	clientSet, err := clientset.NewForConfig(result.ClientConfig)
+	if err != nil {
+		t.Fatalf("error creating clientset: %v", err)
+	}
+
+	// Helpful stuff for testing CRD.
+	apiExtensionClient, err := apiextensionsclientset.NewForConfig(result.ClientConfig)
+	if err != nil {
+		t.Fatalf("error creating extension clientset: %v", err)
+	}
+	// CreateNewCustomResourceDefinition wants to use this namespace for verifying
+	// namespace-scoped CRD creation.
+	createNamespaceOrDie("aval", clientSet, t)
+
+	discoveryClient := cacheddiscovery.NewMemCacheClient(clientSet.Discovery())
+	restMapper := restmapper.NewDeferredDiscoveryRESTMapper(discoveryClient)
+	restMapper.Reset()
+	deletableResources := resourcequotacontroller.GetQuotableResources(discoveryClient)
+	config := *result.ClientConfig
+	dynamicClient, err := dynamic.NewForConfig(&config)
+	if err != nil {
+		t.Fatalf("failed to create dynamicClient: %v", err)
+	}
+	sharedInformers := informers.NewSharedInformerFactory(clientSet, 0)
+	alwaysStarted := make(chan struct{})
+	close(alwaysStarted)
+	rq, err := resourcequotacontroller.NewResourceQuotaController(
+		dynamicClient,
+		restMapper,
+	)
+	gc, err := garbagecollector.NewGarbageCollector(
+		dynamicClient,
+		restMapper,
+		deletableResources,
+		garbagecollector.DefaultIgnoredResources(),
+		sharedInformers,
+		alwaysStarted,
+	)
+	if err != nil {
+		t.Fatalf("failed to create garbage collector: %v", err)
+	}
+
+	stopCh := make(chan struct{})
+	tearDown := func() {
+		close(stopCh)
+		result.TearDownFn()
+	}
+	syncPeriod := 5 * time.Second
+	startGC := func(workers int) {
+		go wait.Until(func() {
+			// Resetting the REST mapper will also invalidate the underlying discovery
+			// client. This is a leaky abstraction and assumes behavior about the REST
+			// mapper, but we'll deal with it for now.
+			restMapper.Reset()
+		}, syncPeriod, stopCh)
+		go gc.Run(workers, stopCh)
+		go gc.Sync(clientSet.Discovery(), syncPeriod, stopCh)
+	}
+
+	if workerCount > 0 {
+		startGC(workerCount)
+	}
+
+	return &testContext{
+		tearDown:           tearDown,
+		gc:                 gc,
+		clientSet:          clientSet,
+		apiExtensionClient: apiExtensionClient,
+		dynamicClient:      dynamicClient,
+		startGC:            startGC,
+		syncPeriod:         syncPeriod,
+	}
+}
+
+func newCRDInstance(definition *apiextensionsv1beta1.CustomResourceDefinition, namespace, name string) *unstructured.Unstructured {
+	return &unstructured.Unstructured{
+		Object: map[string]interface{}{
+			"kind":       definition.Spec.Names.Kind,
+			"apiVersion": definition.Spec.Group + "/" + definition.Spec.Version,
+			"metadata": map[string]interface{}{
+				"name":      name,
+				"namespace": namespace,
+			},
+		},
+	}
+}
+
+func TestQuotaForCustomResource(t *testing.T) {
+	ctx := setup(t, 5)
+	defer ctx.tearDown()
+
+	clientSet, apiExtensionClient, dynamicClient := ctx.clientSet, ctx.apiExtensionClient, ctx.dynamicClient
+
+	ns := createNamespaceOrDie("crd-quota", clientSet, t)
+
+	quotaClient := clientSet.CoreV1().ResourceQuotas(ns.Name)
+
+	definition, resourceClient := createRandomCustomResourceDefinition(t, apiExtensionClient, dynamicClient, ns.Name)
+
+	// Create a custom resource
+	owner := newCRDInstance(definition, ns.Name, names.SimpleNameGenerator.GenerateName("foo1"))
+	owner, err := resourceClient.Create(owner)
+	if err != nil {
+		t.Fatalf("failed to create owner resource %q: %v", owner.GetName(), err)
+	}
+	t.Logf("created a custom resource %q", owner.GetName())
+
+	fooQuota := newResourceQuota("fooQuota", ns.Name)
+	createdQuota, err := quotaClient.Create(fooQuota)
+	if err != nil {
+		t.Error(err)
+	}
+
+	fmt.Println(fooQuota)
+
+}
+*/

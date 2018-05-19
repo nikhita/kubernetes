@@ -175,16 +175,16 @@ func (gb *GraphBuilder) controllerFor(resource schema.GroupVersionResource, kind
 	}
 	shared, err := gb.sharedInformers.ForResource(resource)
 	if err == nil {
-		glog.V(4).Infof("using a shared informer for resource %q, kind %q", resource.String(), kind.String())
+		glog.Infof("using a shared informer for resource %q, kind %q", resource.String(), kind.String())
 		// need to clone because it's from a shared cache
 		shared.Informer().AddEventHandlerWithResyncPeriod(handlers, ResourceResyncTime)
 		return shared.Informer().GetController(), nil
 	} else {
-		glog.V(4).Infof("unable to use a shared informer for resource %q, kind %q: %v", resource.String(), kind.String(), err)
+		glog.Infof("unable to use a shared informer for resource %q, kind %q: %v", resource.String(), kind.String(), err)
 	}
 
 	// TODO: consider store in one storage.
-	glog.V(5).Infof("create storage for resource %s", resource)
+	glog.Infof("create storage for resource %s", resource)
 	_, monitor := cache.NewInformer(
 		listWatcher(gb.dynamicClient, resource),
 		nil,
@@ -244,7 +244,7 @@ func (gb *GraphBuilder) syncMonitors(resources map[schema.GroupVersionResource]s
 		}
 	}
 
-	glog.V(4).Infof("synced monitors; added %d, kept %d, removed %d", added, kept, len(toRemove))
+	glog.Infof("synced monitors; added %d, kept %d, removed %d", added, kept, len(toRemove))
 	// NewAggregate returns nil if errs is 0-length
 	return utilerrors.NewAggregate(errs)
 }
@@ -276,7 +276,7 @@ func (gb *GraphBuilder) startMonitors() {
 			started++
 		}
 	}
-	glog.V(4).Infof("started %d new monitors, %d currently running", started, len(monitors))
+	glog.Infof("started %d new monitors, %d currently running", started, len(monitors))
 }
 
 // IsSynced returns true if any monitors exist AND all those monitors'
@@ -384,7 +384,7 @@ func (gb *GraphBuilder) addDependentToOwners(n *node, owners []metav1.OwnerRefer
 				dependents: make(map[*node]struct{}),
 				virtual:    true,
 			}
-			glog.V(5).Infof("add virtual node.identity: %s\n\n", ownerNode.identity)
+			glog.Infof("add virtual node.identity: %s\n\n", ownerNode.identity)
 			gb.uidToNode.Write(ownerNode)
 		}
 		ownerNode.addDependent(n)
@@ -522,7 +522,7 @@ func (gb *GraphBuilder) addUnblockedOwnersToDeleteQueue(removed []metav1.OwnerRe
 		if ref.BlockOwnerDeletion != nil && *ref.BlockOwnerDeletion {
 			node, found := gb.uidToNode.Read(ref.UID)
 			if !found {
-				glog.V(5).Infof("cannot find %s in uidToNode", ref.UID)
+				glog.Infof("cannot find %s in uidToNode", ref.UID)
 				continue
 			}
 			gb.attemptToDelete.Add(node)
@@ -534,7 +534,7 @@ func (gb *GraphBuilder) addUnblockedOwnersToDeleteQueue(removed []metav1.OwnerRe
 		if wasBlocked && isUnblocked {
 			node, found := gb.uidToNode.Read(c.newRef.UID)
 			if !found {
-				glog.V(5).Infof("cannot find %s in uidToNode", c.newRef.UID)
+				glog.Infof("cannot find %s in uidToNode", c.newRef.UID)
 				continue
 			}
 			gb.attemptToDelete.Add(node)
@@ -544,12 +544,12 @@ func (gb *GraphBuilder) addUnblockedOwnersToDeleteQueue(removed []metav1.OwnerRe
 
 func (gb *GraphBuilder) processTransitions(oldObj interface{}, newAccessor metav1.Object, n *node) {
 	if startsWaitingForDependentsOrphaned(oldObj, newAccessor) {
-		glog.V(5).Infof("add %s to the attemptToOrphan", n.identity)
+		glog.Infof("add %s to the attemptToOrphan", n.identity)
 		gb.attemptToOrphan.Add(n)
 		return
 	}
 	if startsWaitingForDependentsDeleted(oldObj, newAccessor) {
-		glog.V(2).Infof("add %s to the attemptToDelete, because it's waiting for its dependents to be deleted", n.identity)
+		glog.Infof("add %s to the attemptToDelete, because it's waiting for its dependents to be deleted", n.identity)
 		// if the n is added as a "virtual" node, its deletingDependents field is not properly set, so always set it here.
 		n.markDeletingDependents()
 		for dep := range n.dependents {
@@ -582,7 +582,7 @@ func (gb *GraphBuilder) processGraphChanges() bool {
 		utilruntime.HandleError(fmt.Errorf("cannot access obj: %v", err))
 		return true
 	}
-	glog.V(5).Infof("GraphBuilder process object: %s/%s, namespace %s, name %s, uid %s, event type %v", event.gvk.GroupVersion().String(), event.gvk.Kind, accessor.GetNamespace(), accessor.GetName(), string(accessor.GetUID()), event.eventType)
+	glog.Infof("GraphBuilder process object: %s/%s, namespace %s, name %s, uid %s, event type %v", event.gvk.GroupVersion().String(), event.gvk.Kind, accessor.GetNamespace(), accessor.GetName(), string(accessor.GetUID()), event.eventType)
 	// Check if the node already exsits
 	existingNode, found := gb.uidToNode.Read(accessor.GetUID())
 	if found {
@@ -634,7 +634,7 @@ func (gb *GraphBuilder) processGraphChanges() bool {
 		gb.processTransitions(event.oldObj, accessor, existingNode)
 	case event.eventType == deleteEvent:
 		if !found {
-			glog.V(5).Infof("%v doesn't exist in the graph, this shouldn't happen", accessor.GetUID())
+			glog.Infof("%v doesn't exist in the graph, this shouldn't happen", accessor.GetUID())
 			return true
 		}
 		// removeNode updates the graph

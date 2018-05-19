@@ -173,18 +173,18 @@ func (gc *GarbageCollector) Sync(discoveryClient discovery.ServerResourcesInterf
 		// If the gc attempts to sync with 0 resources it will block forever.
 		// TODO: Implement a more complete solution for the garbage collector hanging.
 		if len(newResources) == 0 {
-			glog.V(5).Infof("no resources reported by discovery, skipping garbage collector sync")
+			glog.Infof("no resources reported by discovery, skipping garbage collector sync")
 			return
 		}
 
 		// Decide whether discovery has reported a change.
 		if reflect.DeepEqual(oldResources, newResources) {
-			glog.V(5).Infof("no resource updates from discovery, skipping garbage collector sync")
+			glog.Infof("no resource updates from discovery, skipping garbage collector sync")
 			return
 		}
 
 		// Something has changed, time to sync.
-		glog.V(2).Infof("syncing garbage collector with updated resources from discovery: %v", newResources)
+		glog.Infof("syncing garbage collector with updated resources from discovery: %v", newResources)
 
 		// Ensure workers are paused to avoid processing events before informers
 		// have resynced.
@@ -221,7 +221,7 @@ func (gc *GarbageCollector) Sync(discoveryClient discovery.ServerResourcesInterf
 		// have succeeded to ensure we'll retry on subsequent syncs if an error
 		// occurred.
 		oldResources = newResources
-		glog.V(2).Infof("synced garbage collector")
+		glog.Infof("synced garbage collector")
 	}, period, stopCh)
 }
 
@@ -257,7 +257,7 @@ func (gc *GarbageCollector) attemptToDeleteWorker() bool {
 			//    have a way to distinguish this from a valid type we will recognize
 			//    after the next discovery sync.
 			// For now, record the error and retry.
-			glog.V(5).Infof("error syncing item %s: %v", n, err)
+			glog.Infof("error syncing item %s: %v", n, err)
 		} else {
 			utilruntime.HandleError(fmt.Errorf("error syncing item %s: %v", n, err))
 		}
@@ -267,7 +267,7 @@ func (gc *GarbageCollector) attemptToDeleteWorker() bool {
 		// requeue if item hasn't been observed via an informer event yet.
 		// otherwise a virtual node for an item added AND removed during watch reestablishment can get stuck in the graph and never removed.
 		// see https://issue.k8s.io/56121
-		glog.V(5).Infof("item %s hasn't been observed via informer yet", n.identity)
+		glog.Infof("item %s hasn't been observed via informer yet", n.identity)
 		gc.attemptToDelete.AddRateLimited(item)
 	}
 	return true
@@ -279,7 +279,7 @@ func (gc *GarbageCollector) attemptToDeleteWorker() bool {
 func (gc *GarbageCollector) isDangling(reference metav1.OwnerReference, item *node) (
 	dangling bool, owner *unstructured.Unstructured, err error) {
 	if gc.absentOwnerCache.Has(reference.UID) {
-		glog.V(5).Infof("according to the absentOwnerCache, object %s's owner %s/%s, %s does not exist", item.identity.UID, reference.APIVersion, reference.Kind, reference.Name)
+		glog.Infof("according to the absentOwnerCache, object %s's owner %s/%s, %s does not exist", item.identity.UID, reference.APIVersion, reference.Kind, reference.Name)
 		return true, nil, nil
 	}
 	// TODO: we need to verify the reference resource is supported by the
@@ -300,14 +300,14 @@ func (gc *GarbageCollector) isDangling(reference metav1.OwnerReference, item *no
 	switch {
 	case errors.IsNotFound(err):
 		gc.absentOwnerCache.Add(reference.UID)
-		glog.V(5).Infof("object %s's owner %s/%s, %s is not found", item.identity.UID, reference.APIVersion, reference.Kind, reference.Name)
+		glog.Infof("object %s's owner %s/%s, %s is not found", item.identity.UID, reference.APIVersion, reference.Kind, reference.Name)
 		return true, nil, nil
 	case err != nil:
 		return false, nil, err
 	}
 
 	if owner.GetUID() != reference.UID {
-		glog.V(5).Infof("object %s's owner %s/%s, %s is not found, UID mismatch", item.identity.UID, reference.APIVersion, reference.Kind, reference.Name)
+		glog.Infof("object %s's owner %s/%s, %s is not found, UID mismatch", item.identity.UID, reference.APIVersion, reference.Kind, reference.Name)
 		gc.absentOwnerCache.Add(reference.UID)
 		return true, nil, nil
 	}
@@ -354,10 +354,10 @@ func ownerRefsToUIDs(refs []metav1.OwnerReference) []types.UID {
 }
 
 func (gc *GarbageCollector) attemptToDeleteItem(item *node) error {
-	glog.V(2).Infof("processing item %s", item.identity)
+	glog.Infof("processing item %s", item.identity)
 	// "being deleted" is an one-way trip to the final deletion. We'll just wait for the final deletion, and then process the object's dependents.
 	if item.isBeingDeleted() && !item.isDeletingDependents() {
-		glog.V(5).Infof("processing item %s returned at once, because its DeletionTimestamp is non-nil", item.identity)
+		glog.Infof("processing item %s returned at once, because its DeletionTimestamp is non-nil", item.identity)
 		return nil
 	}
 	// TODO: It's only necessary to talk to the API server if this is a
@@ -369,7 +369,7 @@ func (gc *GarbageCollector) attemptToDeleteItem(item *node) error {
 		// the GraphBuilder can add "virtual" node for an owner that doesn't
 		// exist yet, so we need to enqueue a virtual Delete event to remove
 		// the virtual node from GraphBuilder.uidToNode.
-		glog.V(5).Infof("item %v not found, generating a virtual delete event", item.identity)
+		glog.Infof("item %v not found, generating a virtual delete event", item.identity)
 		gc.dependencyGraphBuilder.enqueueVirtualDeleteEvent(item.identity)
 		// since we're manually inserting a delete event to remove this node,
 		// we don't need to keep tracking it as a virtual node and requeueing in attemptToDelete
@@ -380,7 +380,7 @@ func (gc *GarbageCollector) attemptToDeleteItem(item *node) error {
 	}
 
 	if latest.GetUID() != item.identity.UID {
-		glog.V(5).Infof("UID doesn't match, item %v not found, generating a virtual delete event", item.identity)
+		glog.Infof("UID doesn't match, item %v not found, generating a virtual delete event", item.identity)
 		gc.dependencyGraphBuilder.enqueueVirtualDeleteEvent(item.identity)
 		// since we're manually inserting a delete event to remove this node,
 		// we don't need to keep tracking it as a virtual node and requeueing in attemptToDelete
@@ -397,7 +397,7 @@ func (gc *GarbageCollector) attemptToDeleteItem(item *node) error {
 	// compute if we should delete the item
 	ownerReferences := latest.GetOwnerReferences()
 	if len(ownerReferences) == 0 {
-		glog.V(2).Infof("object %s's doesn't have an owner, continue on next item", item.identity)
+		glog.Infof("object %s's doesn't have an owner, continue on next item", item.identity)
 		return nil
 	}
 
@@ -405,15 +405,15 @@ func (gc *GarbageCollector) attemptToDeleteItem(item *node) error {
 	if err != nil {
 		return err
 	}
-	glog.V(5).Infof("classify references of %s.\nsolid: %#v\ndangling: %#v\nwaitingForDependentsDeletion: %#v\n", item.identity, solid, dangling, waitingForDependentsDeletion)
+	glog.Infof("classify references of %s.\nsolid: %#v\ndangling: %#v\nwaitingForDependentsDeletion: %#v\n", item.identity, solid, dangling, waitingForDependentsDeletion)
 
 	switch {
 	case len(solid) != 0:
-		glog.V(2).Infof("object %s has at least one existing owner: %#v, will not garbage collect", solid, item.identity)
+		glog.Infof("object %s has at least one existing owner: %#v, will not garbage collect", solid, item.identity)
 		if len(dangling) == 0 && len(waitingForDependentsDeletion) == 0 {
 			return nil
 		}
-		glog.V(2).Infof("remove dangling references %#v and waiting references %#v for object %s", dangling, waitingForDependentsDeletion, item.identity)
+		glog.Infof("remove dangling references %#v and waiting references %#v for object %s", dangling, waitingForDependentsDeletion, item.identity)
 		// waitingForDependentsDeletion needs to be deleted from the
 		// ownerReferences, otherwise the referenced objects will be stuck with
 		// the FinalizerDeletingDependents and never get deleted.
@@ -429,7 +429,7 @@ func (gc *GarbageCollector) attemptToDeleteItem(item *node) error {
 				// problem.
 				// there are multiple workers run attemptToDeleteItem in
 				// parallel, the circle detection can fail in a race condition.
-				glog.V(2).Infof("processing object %s, some of its owners and its dependent [%s] have FinalizerDeletingDependents, to prevent potential cycle, its ownerReferences are going to be modified to be non-blocking, then the object is going to be deleted with Foreground", item.identity, dep.identity)
+				glog.Infof("processing object %s, some of its owners and its dependent [%s] have FinalizerDeletingDependents, to prevent potential cycle, its ownerReferences are going to be modified to be non-blocking, then the object is going to be deleted with Foreground", item.identity, dep.identity)
 				patch, err := item.patchToUnblockOwnerReferences()
 				if err != nil {
 					return err
@@ -440,7 +440,7 @@ func (gc *GarbageCollector) attemptToDeleteItem(item *node) error {
 				break
 			}
 		}
-		glog.V(2).Infof("at least one owner of object %s has FinalizerDeletingDependents, and the object itself has dependents, so it is going to be deleted in Foreground", item.identity)
+		glog.Infof("at least one owner of object %s has FinalizerDeletingDependents, and the object itself has dependents, so it is going to be deleted in Foreground", item.identity)
 		// the deletion event will be observed by the graphBuilder, so the item
 		// will be processed again in processDeletingDependentsItem. If it
 		// doesn't have dependents, the function will remove the
@@ -464,7 +464,7 @@ func (gc *GarbageCollector) attemptToDeleteItem(item *node) error {
 			// otherwise, default to background.
 			policy = metav1.DeletePropagationBackground
 		}
-		glog.V(2).Infof("delete object %s with propagation policy %s", item.identity, policy)
+		glog.Infof("delete object %s with propagation policy %s", item.identity, policy)
 		return gc.deleteObject(item.identity, &policy)
 	}
 }
@@ -473,12 +473,12 @@ func (gc *GarbageCollector) attemptToDeleteItem(item *node) error {
 func (gc *GarbageCollector) processDeletingDependentsItem(item *node) error {
 	blockingDependents := item.blockingDependents()
 	if len(blockingDependents) == 0 {
-		glog.V(2).Infof("remove DeleteDependents finalizer for item %s", item.identity)
+		glog.Infof("remove DeleteDependents finalizer for item %s", item.identity)
 		return gc.removeFinalizer(item, metav1.FinalizerDeleteDependents)
 	}
 	for _, dep := range blockingDependents {
 		if !dep.isDeletingDependents() {
-			glog.V(2).Infof("adding %s to attemptToDelete, because its owner %s is deletingDependents", dep.identity, item.identity)
+			glog.Infof("adding %s to attemptToDelete, because its owner %s is deletingDependents", dep.identity, item.identity)
 			gc.attemptToDelete.Add(dep)
 		}
 	}
@@ -514,7 +514,7 @@ func (gc *GarbageCollector) orphanDependents(owner objectReference, dependents [
 	if len(errorsSlice) != 0 {
 		return fmt.Errorf("failed to orphan dependents of owner %s, got errors: %s", owner, utilerrors.NewAggregate(errorsSlice).Error())
 	}
-	glog.V(5).Infof("successfully updated all dependents of owner %s", owner)
+	glog.Infof("successfully updated all dependents of owner %s", owner)
 	return nil
 }
 

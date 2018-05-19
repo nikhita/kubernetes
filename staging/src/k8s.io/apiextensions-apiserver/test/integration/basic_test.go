@@ -23,9 +23,11 @@ import (
 	"testing"
 	"time"
 
+	"k8s.io/api/core/v1"
 	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	"k8s.io/apiextensions-apiserver/test/integration/testserver"
 	"k8s.io/apimachinery/pkg/api/meta"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -33,6 +35,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/dynamic"
+	"k8s.io/client-go/kubernetes/fake"
 )
 
 func TestServerUp(t *testing.T) {
@@ -834,4 +837,54 @@ func TestStatusGetAndPatch(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+}
+
+func TestQuota(t *testing.T) {
+	stopCh, apiExtensionClient, dynamicClient, err := testserver.StartDefaultServerWithClients()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer close(stopCh)
+
+	noxuDefinition := testserver.NewNoxuCustomResourceDefinition(apiextensionsv1beta1.ClusterScoped)
+	err = testserver.CreateNewCustomResourceDefinition(noxuDefinition, apiExtensionClient, dynamicClient)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	ns := "not-the-default"
+	noxuNamespacedResourceClient := NewNamespacedCustomResourceClient(ns, dynamicClient, noxuDefinition)
+
+	noxuInstanceToCreate := testserver.NewNoxuInstance(ns, "foo")
+	_, err = noxuNamespacedResourceClient.Create(noxuInstanceToCreate)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	quota := &v1.ResourceQuota{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: ns,
+			Name:      "noxuquota",
+		},
+		Spec: v1.ResourceQuotaSpec{
+			Hard: v1.ResourceList{
+				"count/noxu.example.com": resource.MustParse("4"),
+			},
+		},
+		Status: v1.ResourceQuotaStatus{
+			Hard: v1.ResourceList{
+				"count/noxu.example.com": resource.MustParse("4"),
+			},
+			/*Used: v1.ResourceList{
+				"count/foobars.example.com": resource.MustParse("1"),
+			},*/
+		},
+	}
+
+	kubeClient := fake.NewSimpleClientset(quota)
+	createdQuota, err := kubeClient.CoreV1().ResourceQuotas(ns).Create(quota)
+	if err != nil {
+		t.Errorf("could not create quota: %v", err)
+	}
+	fmt.Println(createdQuota)
 }

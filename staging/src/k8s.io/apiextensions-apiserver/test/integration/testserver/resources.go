@@ -63,14 +63,14 @@ func NewRandomNameCustomResourceDefinition(scope apiextensionsv1beta1.ResourceSc
 
 func NewNoxuCustomResourceDefinition(scope apiextensionsv1beta1.ResourceScope) *apiextensionsv1beta1.CustomResourceDefinition {
 	return &apiextensionsv1beta1.CustomResourceDefinition{
-		ObjectMeta: metav1.ObjectMeta{Name: "noxus.mygroup.example.com"},
+		ObjectMeta: metav1.ObjectMeta{Name: "noxus.example.com"},
 		Spec: apiextensionsv1beta1.CustomResourceDefinitionSpec{
-			Group:   "mygroup.example.com",
+			Group:   "example.com",
 			Version: "v1beta1",
 			Names: apiextensionsv1beta1.CustomResourceDefinitionNames{
 				Plural:     "noxus",
 				Singular:   "nonenglishnoxu",
-				Kind:       "WishIHadChosenNoxu",
+				Kind:       "noxu",
 				ShortNames: []string{"foo", "bar", "abc", "def"},
 				ListKind:   "NoxuItemList",
 				Categories: []string{"all"},
@@ -83,8 +83,8 @@ func NewNoxuCustomResourceDefinition(scope apiextensionsv1beta1.ResourceScope) *
 func NewNoxuInstance(namespace, name string) *unstructured.Unstructured {
 	return &unstructured.Unstructured{
 		Object: map[string]interface{}{
-			"apiVersion": "mygroup.example.com/v1beta1",
-			"kind":       "WishIHadChosenNoxu",
+			"apiVersion": "example.com/v1beta1",
+			"kind":       "noxu",
 			"metadata": map[string]interface{}{
 				"namespace": namespace,
 				"name":      name,
