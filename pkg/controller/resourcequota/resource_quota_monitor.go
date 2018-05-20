@@ -270,7 +270,7 @@ func (qm *QuotaMonitor) SyncMonitors(resources map[schema.GroupVersionResource]s
 			listerFuncByNameSpace := func(namespace string) ([]runtime.Object, error) {
 				return l.ByNamespace(namespace).List(labels.Everything())
 			}
-			evaluator = generic.NewObjectCountEvaluator(false, resource.GroupResource(), listerFuncByNameSpace, "")
+			evaluator = generic.NewObjectCountEvaluator(true, resource.GroupResource(), listerFuncByNameSpace, "")
 			qm.registry.Add(evaluator)
 			glog.Infof("QuotaMonitor created object count evaluator for %s", resource.GroupResource())
 		}

@@ -393,13 +393,11 @@ func (rq *ResourceQuotaController) syncResourceQuota(v1ResourceQuota *v1.Resourc
 	// there was a change observed by this controller that requires we update quota
 	if dirty {
 		v1Usage := &v1.ResourceQuota{}
-		fmt.Println(resourceQuota)
-		fmt.Println(" ")
 		if err := k8s_api_v1.Convert_core_ResourceQuota_To_v1_ResourceQuota(&usage, v1Usage, nil); err != nil {
 			return err
 		}
-		updatedUsage, err := rq.rqClient.ResourceQuotas(usage.Namespace).UpdateStatus(v1Usage)
-		fmt.Println("UPDATED USAGE: ", updatedUsage)
+
+		_, err = rq.rqClient.ResourceQuotas(usage.Namespace).UpdateStatus(v1Usage)
 		return err
 	}
 	return nil
