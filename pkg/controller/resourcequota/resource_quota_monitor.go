@@ -160,6 +160,14 @@ func (qm *QuotaMonitor) controllerAndListerFor(resource schema.GroupVersionResou
 	// TODO: pass this down
 	// clock := clock.RealClock{}
 	handlers := cache.ResourceEventHandlerFuncs{
+		AddFunc: func(obj interface{}) {
+			event := &event{
+				eventType: addEvent,
+				obj:       obj,
+				gvr:       resource,
+			}
+			qm.resourceChanges.Add(event)
+		},
 		UpdateFunc: func(oldObj, newObj interface{}) {
 			// TODO: leaky abstraction!  live w/ it for now, but should pass down an update filter func.
 			// we only want to queue the updates we care about though as too much noise will overwhelm queue.
@@ -212,6 +220,7 @@ func (qm *QuotaMonitor) controllerAndListerFor(resource schema.GroupVersionResou
 	indexer, monitor := cache.NewIndexerInformer(
 		listWatcher(qm.dynamicClient, resource),
 		nil,
+		// &unstructured.Unstructured{},
 		qm.resyncPeriod(),
 		// don't need to clone because it's not from shared cache
 		handlers,
