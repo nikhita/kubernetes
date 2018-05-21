@@ -113,6 +113,29 @@ func CalculateUsageStats(options quota.UsageStatsOptions,
 	if err != nil {
 		return result, fmt.Errorf("failed to list content: %v", err)
 	}
+	/*newObj := &unstructured.Unstructured{
+		Object: map[string]interface{}{
+			"apiVersion": "example.com/v1",
+			"kind":       "crontab",
+			"metadata": map[string]interface{}{
+				"namespace": "default",
+				"name":      "crontabs-name",
+			},
+		},
+	}
+	items = append(items, newObj)
+	newObj2 := &unstructured.Unstructured{
+		Object: map[string]interface{}{
+			"apiVersion": "example.com/v1",
+			"kind":       "crontab",
+			"metadata": map[string]interface{}{
+				"namespace": "default",
+				"name":      "crontabs-name-2",
+			},
+		},
+	}
+	items = append(items, newObj2)*/
+
 	for _, item := range items {
 		// need to verify that the item matches the set of scopes
 		matchesScopes := true
@@ -128,6 +151,7 @@ func CalculateUsageStats(options quota.UsageStatsOptions,
 		// only count usage if there was a match
 		if matchesScopes {
 			usage, err := usageFunc(item)
+			fmt.Println("USAGE IS:", usage)
 			if err != nil {
 				return result, err
 			}

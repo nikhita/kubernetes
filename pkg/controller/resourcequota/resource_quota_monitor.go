@@ -25,6 +25,7 @@ import (
 
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -216,7 +217,7 @@ func (qm *QuotaMonitor) controllerAndListerFor(resource schema.GroupVersionResou
 	}
 
 	// TODO: consider store in one storage.
-	glog.Infof("create storage for resource %s", resource)
+	glog.Infof("create storage for resource %s", resource.String())
 	indexer, monitor := cache.NewIndexerInformer(
 		listWatcher(qm.dynamicClient, resource),
 		nil,
@@ -226,7 +227,14 @@ func (qm *QuotaMonitor) controllerAndListerFor(resource schema.GroupVersionResou
 		handlers,
 		cache.Indexers{"namespace": cache.MetaNamespaceIndexFunc},
 	)
-	lister := cache.NewGenericLister(indexer, schema.GroupResource{Group: resource.Group, Resource: resource.Resource})
+	newObj := &unstructured.Unstructured{
+		Object: map[string]interface{}{
+			"apiVersion": "example.com/v1",
+			"kind":       "crontabs",
+		},
+	}
+	indexer.Add(newObj)
+	lister := cache.NewGenericLister(indexer, resource.GroupResource())
 	return monitor, lister, nil
 
 	// TODO: if we can share storage with garbage collector, it may make sense to support other resources

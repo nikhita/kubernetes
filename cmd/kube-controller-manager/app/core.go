@@ -271,12 +271,6 @@ func startResourceQuotaController(ctx ControllerContext) (bool, error) {
 	// get an initial set of quotable resources to prime the quota controller
 	quotableResources := resourcequotacontroller.GetQuotableResources(discoveryClient)
 
-	// TODO: Make NewMetadataCodecFactory support arbitrary (non-compiled)
-	// resource types. Otherwise we'll be storing full Unstructured data in our
-	// caches for custom resources. Consider porting it to work with
-	// metav1beta1.PartialObjectMetadata.
-	// metaOnlyClientPool := dynamic.NewClientPool(config, restMapper, dynamic.LegacyAPIPathResolverFunc)
-
 	discoveryFunc := resourceQuotaControllerClient.Discovery().ServerPreferredNamespacedResources
 	listerFuncForResource := generic.ListerFuncForResourceFunc(ctx.InformerFactory.ForResource)
 	quotaConfiguration := quotainstall.NewQuotaConfigurationForControllers(listerFuncForResource)
