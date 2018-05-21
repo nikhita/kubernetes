@@ -25,11 +25,16 @@ import (
 
 	"k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/clock"
 	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/apimachinery/pkg/watch"
+	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/util/workqueue"
 	"k8s.io/kubernetes/pkg/controller"
@@ -37,6 +42,8 @@ import (
 	"k8s.io/kubernetes/pkg/quota/evaluator/core"
 	"k8s.io/kubernetes/pkg/quota/generic"
 )
+
+const ResourceResyncTime time.Duration = 0
 
 type eventType int
 
@@ -99,6 +106,13 @@ type QuotaMonitor struct {
 
 	// maintains list of evaluators
 	registry quota.Registry
+
+	// metaOnlyClientPool uses a special codec, which removes fields except for
+	// apiVersion, kind, and metadata during decoding.
+	metaOnlyClientPool dynamic.ClientPool
+
+	// TODO: add comment
+	restMapper meta.RESTMapper
 }
 
 func NewQuotaMonitor(informersStarted <-chan struct{}, informerFactory InformerFactory, ignoredResources map[schema.GroupResource]struct{}, resyncPeriod controller.ResyncPeriodFunc, replenishmentFunc ReplenishmentFunc, registry quota.Registry) *QuotaMonitor {
@@ -130,7 +144,33 @@ func (m *monitor) Run() {
 
 type monitors map[schema.GroupVersionResource]*monitor
 
-func (qm *QuotaMonitor) controllerFor(resource schema.GroupVersionResource) (cache.Controller, error) {
+// TODO: needs to be refactored wrt the GC
+func listWatcher(client dynamic.Interface, resource schema.GroupVersionResource) *cache.ListWatch {
+	return &cache.ListWatch{
+		ListFunc: func(options metav1.ListOptions) (runtime.Object, error) {
+			// APIResource.Kind is not used by the dynamic client, so
+			// leave it empty. We want to list this resource in all
+			// namespaces if it's namespace scoped, so leave
+			// APIResource.Namespaced as false is all right.
+			apiResource := metav1.APIResource{Name: resource.Resource}
+			return client.ParameterCodec(dynamic.VersionedParameterEncoderWithV1Fallback).
+				Resource(&apiResource, metav1.NamespaceAll).
+				List(options)
+		},
+		WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
+			// APIResource.Kind is not used by the dynamic client, so
+			// leave it empty. We want to list this resource in all
+			// namespaces if it's namespace scoped, so leave
+			// APIResource.Namespaced as false is all right.
+			apiResource := metav1.APIResource{Name: resource.Resource}
+			return client.ParameterCodec(dynamic.VersionedParameterEncoderWithV1Fallback).
+				Resource(&apiResource, metav1.NamespaceAll).
+				Watch(options)
+		},
+	}
+}
+
+func (qm *QuotaMonitor) controllerAndListerFor(resource schema.GroupVersionResource, kind schema.GroupVersionKind) (cache.Controller, cache.GenericLister, error) {
 	// TODO: pass this down
 	clock := clock.RealClock{}
 	handlers := cache.ResourceEventHandlerFuncs{
@@ -171,17 +211,36 @@ func (qm *QuotaMonitor) controllerFor(resource schema.GroupVersionResource) (cac
 			qm.resourceChanges.Add(event)
 		},
 	}
+
 	shared, err := qm.informerFactory.ForResource(resource)
 	if err == nil {
 		glog.V(4).Infof("QuotaMonitor using a shared informer for resource %q", resource.String())
 		shared.Informer().AddEventHandlerWithResyncPeriod(handlers, qm.resyncPeriod())
-		return shared.Informer().GetController(), nil
+		return shared.Informer().GetController(), shared.Lister(), nil
+	} else {
+		glog.V(4).Infof("QuotaMonitor unable to use a shared informer for resource %q: %v", resource.String(), err)
 	}
-	glog.V(4).Infof("QuotaMonitor unable to use a shared informer for resource %q: %v", resource.String(), err)
+
+	// TODO: consider store in one storage.
+	glog.V(5).Infof("create storage for resource %s", resource)
+	client, err := qm.metaOnlyClientPool.ClientForGroupVersionKind(kind)
+	if err != nil {
+		return nil, nil, err
+	}
+	indexer, monitor := cache.NewIndexerInformer(
+		listWatcher(client, resource),
+		nil,
+		ResourceResyncTime,
+		// don't need to clone because it's not from shared cache
+		handlers,
+		cache.Indexers{},
+	)
+	lister := cache.NewGenericLister(indexer, schema.GroupResource{Group: resource.Group, Resource: resource.Resource})
+	return monitor, lister, nil
 
 	// TODO: if we can share storage with garbage collector, it may make sense to support other resources
 	// until that time, aggregated api servers will have to run their own controller to reconcile their own quota.
-	return nil, fmt.Errorf("unable to monitor quota for resource %q", resource.String())
+	// return nil, fmt.Errorf("unable to monitor quota for resource %q", resource.String())
 }
 
 // SyncMonitors rebuilds the monitor set according to the supplied resources,
@@ -212,7 +271,12 @@ func (qm *QuotaMonitor) SyncMonitors(resources map[schema.GroupVersionResource]s
 			kept++
 			continue
 		}
-		c, err := qm.controllerFor(resource)
+		kind, err := qm.restMapper.KindFor(resource)
+		if err != nil {
+			errs = append(errs, fmt.Errorf("couldn't look up resource %q: %v", resource, err))
+			continue
+		}
+		c, l, err := qm.controllerAndListerFor(resource, kind)
 		if err != nil {
 			errs = append(errs, fmt.Errorf("couldn't start monitor for resource %q: %v", resource, err))
 			continue
@@ -221,9 +285,10 @@ func (qm *QuotaMonitor) SyncMonitors(resources map[schema.GroupVersionResource]s
 		// check if we need to create an evaluator for this resource (if none previously registered)
 		evaluator := qm.registry.Get(resource.GroupResource())
 		if evaluator == nil {
-			listerFunc := generic.ListerFuncForResourceFunc(qm.informerFactory.ForResource)
-			listResourceFunc := generic.ListResourceUsingListerFunc(listerFunc, resource)
-			evaluator = generic.NewObjectCountEvaluator(false, resource.GroupResource(), listResourceFunc, "")
+			listerFuncByNameSpace := func(namespace string) ([]runtime.Object, error) {
+				return l.ByNamespace(namespace).List(labels.Everything())
+			}
+			evaluator = generic.NewObjectCountEvaluator(false, resource.GroupResource(), listerFuncByNameSpace, "")
 			qm.registry.Add(evaluator)
 			glog.Infof("QuotaMonitor created object count evaluator for %s", resource.GroupResource())
 		}
