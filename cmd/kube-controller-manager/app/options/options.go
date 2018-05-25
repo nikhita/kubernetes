@@ -42,6 +42,7 @@ import (
 	componentconfigv1alpha1 "k8s.io/kubernetes/pkg/apis/componentconfig/v1alpha1"
 	"k8s.io/kubernetes/pkg/controller/garbagecollector"
 	"k8s.io/kubernetes/pkg/master/ports"
+	quotainstall "k8s.io/kubernetes/pkg/quota/install"
 	// add the kubernetes feature gates
 	_ "k8s.io/kubernetes/pkg/features"
 
@@ -192,6 +193,12 @@ func NewKubeControllerManagerOptions() *KubeControllerManagerOptions {
 	}
 
 	s.GarbageCollectorController.GCIgnoredResources = gcIgnoredResources
+
+	rqIgnoredResources := make([]componentconfig.GroupResource, 0, len(quotainstall.DefaultIgnoredResources()))
+	for r := range quotainstall.DefaultIgnoredResources() {
+		rqIgnoredResources = append(rqIgnoredResources, componentconfig.GroupResource{Group: r.Group, Resource: r.Resource})
+	}
+	s.ResourceQuotaController.RQIgnoredResources = rqIgnoredResources
 
 	return &s
 }

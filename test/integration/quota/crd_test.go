@@ -72,7 +72,7 @@ func TestCustomResourceQuota(t *testing.T) {
 		SharedInformerFactory:     informers,
 		ReplenishmentResyncPeriod: controller.NoResyncPeriodFunc,
 		DiscoveryFunc:             discoveryFunc,
-		IgnoredResourcesFunc:      qc.IgnoredResources,
+		IgnoredResources:          quotainstall.DefaultIgnoredResources(),
 		InformersStarted:          informersStarted,
 		Registry:                  generic.NewRegistry(qc.Evaluators()),
 		RESTMapper:                restmapper.NewDeferredDiscoveryRESTMapper(cached.NewMemCacheClient(clientset.Discovery())),
