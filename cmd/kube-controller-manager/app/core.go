@@ -270,9 +270,9 @@ func startResourceQuotaController(ctx ControllerContext) (bool, error) {
 		InformerFactory:           ctx.InformerFactory,
 		ReplenishmentResyncPeriod: ctx.ResyncPeriod,
 		DiscoveryFunc:             discoveryFunc,
-		IgnoredResourcesFunc:      quotaConfiguration.IgnoredResources,
 		InformersStarted:          ctx.InformersStarted,
 		Registry:                  generic.NewRegistry(quotaConfiguration.Evaluators()),
+		IgnoredResources:          ignoredResources,
 	}
 	if resourceQuotaControllerClient.CoreV1().RESTClient().GetRateLimiter() != nil {
 		if err := metrics.RegisterMetricAndTrackRateLimiterUsage("resource_quota_controller", resourceQuotaControllerClient.CoreV1().RESTClient().GetRateLimiter()); err != nil {
