@@ -36,7 +36,7 @@
 		},
 		{
 			"ImportPath": "github.com/json-iterator/go",
-			"Rev": "2ddf6d758266fcb080a4f9e054b9f292c85e6798"
+			"Rev": "7cceb6c2e37f896dc3817e031f83dce25b180a8b"
 		},
 		{
 			"ImportPath": "github.com/modern-go/concurrent",
