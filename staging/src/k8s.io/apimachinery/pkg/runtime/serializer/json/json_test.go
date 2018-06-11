@@ -221,6 +221,16 @@ func TestDecode(t *testing.T) {
 				},
 			},
 		},
+		// decoding is case-sensitive. "Value" in invalid, should be "value".
+		{
+			data:        []byte(`{"kind":"Test","apiVersion":"other/blah","Value":1,"Other":"test"}`),
+			into:        &testDecodable{},
+			typer:       &mockTyper{err: runtime.NewNotRegisteredErrForKind(schema.GroupVersionKind{Kind: "Test", Group: "other", Version: "blah"})},
+			expectedGVK: &schema.GroupVersionKind{Kind: "Test", Group: "other", Version: "blah"},
+			expectedObject: &testDecodable{
+				Other: "test",
+			},
+		},
 	}
 
 	for i, test := range testCases {

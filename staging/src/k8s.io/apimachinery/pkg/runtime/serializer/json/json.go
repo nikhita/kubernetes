@@ -93,6 +93,13 @@ func init() {
 	jsoniter.RegisterTypeDecoderFunc("interface {}", decodeNumberAsInt64IfPossible)
 }
 
+var jsonIterConfig = jsoniter.Config{
+	EscapeHTML:             true,
+	SortMapKeys:            true,
+	ValidateJsonRawMessage: true,
+	CaseSensitive:          true,
+}.Froze()
+
 // gvkWithDefaults returns group kind and version defaulting from provided default
 func gvkWithDefaults(actual, defaultGVK schema.GroupVersionKind) schema.GroupVersionKind {
 	if len(actual.Kind) == 0 {
@@ -157,7 +164,7 @@ func (s *Serializer) Decode(originalData []byte, gvk *schema.GroupVersionKind, i
 		types, _, err := s.typer.ObjectKinds(into)
 		switch {
 		case runtime.IsNotRegisteredError(err), isUnstructured:
-			if err := jsoniter.ConfigCompatibleWithStandardLibrary.Unmarshal(data, into); err != nil {
+			if err := jsonIterConfig.Unmarshal(data, into); err != nil {
 				return nil, actual, err
 			}
 			return into, actual, nil
@@ -181,7 +188,7 @@ func (s *Serializer) Decode(originalData []byte, gvk *schema.GroupVersionKind, i
 		return nil, actual, err
 	}
 
-	if err := jsoniter.ConfigCompatibleWithStandardLibrary.Unmarshal(data, obj); err != nil {
+	if err := jsonIterConfig.Unmarshal(data, obj); err != nil {
 		return nil, actual, err
 	}
 	return obj, actual, nil
@@ -190,7 +197,7 @@ func (s *Serializer) Decode(originalData []byte, gvk *schema.GroupVersionKind, i
 // Encode serializes the provided object to the given writer.
 func (s *Serializer) Encode(obj runtime.Object, w io.Writer) error {
 	if s.yaml {
-		json, err := jsoniter.ConfigCompatibleWithStandardLibrary.Marshal(obj)
+		json, err := jsonIterConfig.Marshal(obj)
 		if err != nil {
 			return err
 		}
@@ -203,7 +210,7 @@ func (s *Serializer) Encode(obj runtime.Object, w io.Writer) error {
 	}
 
 	if s.pretty {
-		data, err := jsoniter.ConfigCompatibleWithStandardLibrary.MarshalIndent(obj, "", "  ")
+		data, err := jsonIterConfig.MarshalIndent(obj, "", "  ")
 		if err != nil {
 			return err
 		}
