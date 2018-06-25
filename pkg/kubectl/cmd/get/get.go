@@ -36,6 +36,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/rest"
+	"k8s.io/client-go/restmapper"
 	"k8s.io/kubernetes/pkg/api/legacyscheme"
 	api "k8s.io/kubernetes/pkg/apis/core"
 	"k8s.io/kubernetes/pkg/kubectl"
@@ -224,7 +225,12 @@ func (o *GetOptions) Complete(f cmdutil.Factory, cmd *cobra.Command, args []stri
 
 	o.IncludeUninitialized = cmdutil.ShouldIncludeUninitialized(cmd, false)
 
-	if resource.MultipleTypesRequested(args) {
+	discoveryClient, discoveryErr := f.ToDiscoveryClient()
+	var categoryExpander restmapper.CategoryExpander
+	if discoveryErr == nil {
+		categoryExpander = restmapper.NewDiscoveryCategoryExpander(discoveryClient)
+	}
+	if resource.MultipleTypesRequested(args, categoryExpander) {
 		o.PrintFlags.EnsureWithKind()
 	}
 	o.ToPrinter = func(mapping *meta.RESTMapping, withNamespace bool) (printers.ResourcePrinterFunc, error) {
