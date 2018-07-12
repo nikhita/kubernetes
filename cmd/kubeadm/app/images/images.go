@@ -73,7 +73,7 @@ func GetAllImages(cfg *kubeadmapi.InitConfiguration) []string {
 	imgs = append(imgs, GetKubeControlPlaneImageNoOverride(constants.KubeProxy, cfg))
 
 	// pause, etcd and kube-dns are not available on the ci image repository so use the default image repository.
-	imgs = append(imgs, GetGenericImage(cfg.ImageRepository, "pause", "3.1"))
+	imgs = append(imgs, fmt.Sprintf("%s/%s:%s", cfg.ImageRepository, "pause", "3.1"))
 
 	// if etcd is not external then add the image as it will be required
 	if cfg.Etcd.Local != nil {
