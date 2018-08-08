@@ -496,6 +496,20 @@ func (o *GetOptions) watch(f cmdutil.Factory, cmd *cobra.Command, args []string)
 		ResourceTypeOrNameArgs(true, args...).
 		SingleResourceType().
 		Latest().
+		Flatten().
+		TransformRequests(func(req *rest.Request) {
+			// We need full objects if printing with openapi columns
+			if o.PrintWithOpenAPICols {
+				return
+			}
+			if o.ServerPrint && o.IsHumanReadablePrinter && !o.Sort {
+				group := metav1beta1.GroupName
+				version := metav1beta1.SchemeGroupVersion.Version
+
+				tableParam := fmt.Sprintf("application/json;as=Table;v=%s;g=%s, application/json", version, group)
+				req.SetHeader("Accept", tableParam)
+			}
+		}).
 		Do()
 	if err := r.Err(); err != nil {
 		return err
@@ -514,6 +528,19 @@ func (o *GetOptions) watch(f cmdutil.Factory, cmd *cobra.Command, args []string)
 	if err != nil {
 		return err
 	}
+
+	if o.ServerPrint {
+		table, err := o.decodeIntoTable(info.Object)
+		if err == nil {
+			info.Object = table
+		} else {
+			// if we are unable to decode server response into a v1beta1.Table,
+			// fallback to client-side printing with whatever info the server returned.
+			glog.V(2).Infof("Unable to decode server response into a Table. Falling back to hardcoded types: %v", err)
+
+		}
+	}
+
 	obj, err := r.Object()
 	if err != nil {
 		return err
@@ -536,24 +563,17 @@ func (o *GetOptions) watch(f cmdutil.Factory, cmd *cobra.Command, args []string)
 
 	// print the current object
 	if !o.WatchOnly {
-		var objsToPrint []runtime.Object
 		writer := printers.GetNewTabWriter(o.Out)
+		var objToPrint runtime.Object
+		if o.IsHumanReadablePrinter {
+			// printing always takes the internal version, but the watch event uses externals
+			internalGV := mapping.GroupVersionKind.GroupKind().WithVersion(runtime.APIVersionInternal).GroupVersion()
+			objToPrint = attemptToConvertToInternal(info.Object, legacyscheme.Scheme, internalGV)
+		}
+		if err := printer.PrintObj(objToPrint, writer); err != nil {
+			return fmt.Errorf("unable to output the provided object: %v", err)
+		}
 
-		if isList {
-			objsToPrint, _ = meta.ExtractList(obj)
-		} else {
-			objsToPrint = append(objsToPrint, obj)
-		}
-		for _, objToPrint := range objsToPrint {
-			if o.IsHumanReadablePrinter {
-				// printing always takes the internal version, but the watch event uses externals
-				internalGV := mapping.GroupVersionKind.GroupKind().WithVersion(runtime.APIVersionInternal).GroupVersion()
-				objToPrint = attemptToConvertToInternal(objToPrint, legacyscheme.Scheme, internalGV)
-			}
-			if err := printer.PrintObj(objToPrint, writer); err != nil {
-				return fmt.Errorf("unable to output the provided object: %v", err)
-			}
-		}
 		writer.Flush()
 	}
 
@@ -575,6 +595,7 @@ func (o *GetOptions) watch(f cmdutil.Factory, cmd *cobra.Command, args []string)
 
 			// printing always takes the internal version, but the watch event uses externals
 			// TODO fix printing to use server-side or be version agnostic
+			// TODO: here we only have the object. how do we get the table in this case?
 			objToPrint := e.Object
 			if o.IsHumanReadablePrinter {
 				internalGV := mapping.GroupVersionKind.GroupKind().WithVersion(runtime.APIVersionInternal).GroupVersion()
