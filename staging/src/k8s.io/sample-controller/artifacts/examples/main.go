@@ -29,6 +29,7 @@ import (
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/rest"
+	"k8s.io/client-go/restmapper"
 	"k8s.io/client-go/scale"
 	"k8s.io/client-go/tools/clientcmd"
 	clientset "k8s.io/sample-controller/pkg/client/clientset/versioned"
@@ -111,7 +112,7 @@ func createNewScaleClient(config *rest.Config) (scale.ScalesGetter, error) {
 		return nil, err
 	}
 
-	resources := []*discovery.APIGroupResources{
+	resources := []*restmapper.APIGroupResources{
 		{
 			Group: metav1.APIGroup{
 				Name: resourceGroup,
@@ -126,7 +127,7 @@ func createNewScaleClient(config *rest.Config) (scale.ScalesGetter, error) {
 		},
 	}
 
-	restMapper := discovery.NewRESTMapper(resources, nil)
+	restMapper := restmapper.NewDiscoveryRESTMapper(resources)
 	// the resolver knows how to convert a groupVersion to its API path.
 	resolver := scale.NewDiscoveryScaleKindResolver(discoveryClient)
 
