@@ -16,6 +16,6 @@ limitations under the License.
 
 // +k8s:deepcopy-gen=package
 // +groupName=example.test.apiserver.code-generator.k8s.io
-// +groupGoName=SecondExample
+// +groupGoName=ThirdExample
 
 package example3 // import "k8s.io/code-generator/_examples/apiserver/apis/example3"
