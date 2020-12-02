@@ -49,5 +49,6 @@ replace (
 	k8s.io/component-base => ../component-base
 	k8s.io/controller-manager => ../controller-manager
 	k8s.io/csi-translation-lib => ../csi-translation-lib
+	k8s.io/kube-openapi => github.com/nikhita/kube-openapi v0.0.0-20201202112845-d16cf5751bb0
 	k8s.io/legacy-cloud-providers => ../legacy-cloud-providers
 )

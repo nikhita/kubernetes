@@ -41,7 +41,7 @@ require (
 	k8s.io/component-base v0.0.0
 	k8s.io/component-helpers v0.0.0
 	k8s.io/klog/v2 v2.4.0
-	k8s.io/kube-openapi v0.0.0-20201113171705-d219536bb9fd
+	k8s.io/kube-openapi v0.0.0-20201202112845-d16cf5751bb0
 	k8s.io/metrics v0.0.0
 	k8s.io/utils v0.0.0-20201110183641-67b214c5f920
 	sigs.k8s.io/kustomize v2.0.3+incompatible
@@ -56,6 +56,7 @@ replace (
 	k8s.io/code-generator => ../code-generator
 	k8s.io/component-base => ../component-base
 	k8s.io/component-helpers => ../component-helpers
+	k8s.io/kube-openapi => github.com/nikhita/kube-openapi v0.0.0-20201202112845-d16cf5751bb0
 	k8s.io/kubectl => ../kubectl
 	k8s.io/metrics => ../metrics
 )
