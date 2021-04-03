@@ -12,4 +12,5 @@ require (
 	honnef.co/go/tools v0.0.1-2020.1.6
 	k8s.io/klog/hack/tools v0.0.0-20210303110520-14dec3377f55
 	sigs.k8s.io/zeitgeist v0.2.0
+	github.com/RinkiyaKeDad/dependency-analyzer-poc 
 )
