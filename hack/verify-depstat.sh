@@ -19,5 +19,7 @@ popd >/dev/null
 
 cd "${KUBE_ROOT}"
 
-echo 'running depstat'
-depstat stats --json > dependency-stats.json
+# <(...) is process substitution which converts output of a 
+# command into a file like object which is what diff expects
+# -s reports if the files are same
+diff -s ${KUBE_ROOT}/dependency-stats.json <(depstat stats --json)
