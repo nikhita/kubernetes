@@ -25,6 +25,8 @@ source "${KUBE_ROOT}/hack/lib/util.sh"
 kube::golang::verify_go_version
 kube::golang::setup_env
 
+# Explicitly opt into go modules, even though we're inside a GOPATH directory
+export GO111MODULE=on
 
 echo 'installing depstat'
 pushd "${KUBE_ROOT}/hack/tools" >/dev/null
