@@ -25,17 +25,22 @@ source "${KUBE_ROOT}/hack/lib/util.sh"
 kube::golang::verify_go_version
 kube::golang::setup_env
 
+# Ensure that we find the binaries we build before anything else.
+export GOBIN="${KUBE_OUTPUT_BINPATH}"
+PATH="${GOBIN}:${PATH}"
+
 # Explicitly opt into go modules, even though we're inside a GOPATH directory
 export GO111MODULE=on
 
-echo 'installing depstat'
+echo 'Installing depstat'
 pushd "${KUBE_ROOT}/hack/tools" >/dev/null
-  GO111MODULE=on go install github.com/RinkiyaKeDad/depstat
+  GO111MODULE=on go install k8s.io/repo-infra/cmd/depstat
 popd >/dev/null
 
-cd "${KUBE_ROOT}"
+# cd "${KUBE_ROOT}"
 
+echo 'Running depstat'
 # <(...) is process substitution which converts output of a 
 # command into a file like object which is what diff expects
 # -s reports if the files are same
-diff -s ${KUBE_ROOT}/dependency-stats.json <(depstat stats --json)
+diff -s ${KUBE_ROOT}/hack/dependency-stats.json <(depstat stats --json)

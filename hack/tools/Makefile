@@ -21,6 +21,7 @@ DEP_PROGS=\
 	$(GOBIN)/prettybench\
 	$(GOBIN)/staticcheck\
 	$(GOBIN)/logcheck\
+	$(GOBIN)/depstat\
 
 .PHONY: all
 all: clean build
@@ -51,3 +52,6 @@ $(GOBIN)/staticcheck: deps
 
 $(GOBIN)/logcheck: deps
 	go install k8s.io/klog/hack/tools/logcheck
+
+$(GOBIN)/depstat: deps
+	go install k8s.io/repo-infra/cmd/depstat
