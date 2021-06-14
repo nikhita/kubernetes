@@ -126,6 +126,53 @@
         }
       },
       "description": "The `requestFunc` calls `validatingAdmission.Validate()` which applies validating webhooks and then creates the object."
+    },
+    {
+      "directory": "pkg/registry/generic/registry",
+      "description": ""
+    },
+    {
+      "file": "pkg/registry/generic/registry/store.go",
+      "description": "For example, let's look at the `Create` method in the generic registry of the apiserver.",
+      "line": 362
+    },
+    {
+      "file": "pkg/registry/generic/registry/store.go",
+      "description": "The method first calls `BeforeCreate` which prepares the object for creation by removing the `.status` part of the object, etc.",
+      "line": 376
+    },
+    {
+      "file": "pkg/registry/generic/registry/store.go",
+      "description": "Finally it validates the object before moving on to store it in etcd.",
+      "line": 382
+    },
+    {
+      "directory": "pkg/storage/etcd3",
+      "description": "Now let's look at the etcd3 directory to understand how the object is finally stored."
+    },
+    {
+      "file": "pkg/storage/etcd3/store.go",
+      "description": "Let's look at the `Create` method!",
+      "line": 143
+    },
+    {
+      "file": "pkg/storage/etcd3/store.go",
+      "description": "The object is then converted to the storage version and encoded back to `[]byte`s.",
+      "line": 150
+    },
+    {
+      "file": "pkg/storage/etcd3/store.go",
+      "selection": {
+        "start": {
+          "line": 167,
+          "character": 1
+        },
+        "end": {
+          "line": 171,
+          "character": 12
+        }
+      },
+      "description": "Add finaly the object is written into etcd!"
     }
   ],
   "ref": "master"
