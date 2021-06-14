@@ -1,0 +1,132 @@
+{
+  "$schema": "https://aka.ms/codetour-schema",
+  "title": "Kubernetes API internals",
+  "steps": [
+    {
+      "directory": "pkg/endpoints/handlers",
+      "description": "We will first look at how the Kubernetes apiserver creates a resource.\n\nThe REST handlers for the apiserver are located in the [staging/src/k8s.io/apiserver/pkg/endpoints/handlers](https://github.com/kubernetes/kubernetes/tree/master/staging/src/k8s.io/apiserver/pkg/endpoints/handlers) directory"
+    },
+    {
+      "file": "pkg/endpoints/handlers/rest.go",
+      "description": "The `RequestScope` contains conversion, defaulting, etc methods.",
+      "line": 69
+    },
+    {
+      "file": "pkg/endpoints/handlers/rest.go",
+      "description": "The `NegotiatedSerializer` is an interface used for obtaining encoders and decoders for multiple supported media types like json, yaml, etc.",
+      "line": 72
+    },
+    {
+      "file": "pkg/endpoints/handlers/rest.go",
+      "description": "The `ObjectConvertor` allows converting objects from one version to another.\n\nExample: from v1 => internal version.",
+      "line": 81
+    },
+    {
+      "file": "pkg/endpoints/handlers/rest.go",
+      "description": "`ObjectDefaulter` applies default values.",
+      "line": 82
+    },
+    {
+      "file": "pkg/endpoints/handlers/create.go",
+      "description": "Now that we are familiar with how the `RequestScope` looks like, let's see how a resource is created in [create.go](https://github.com/kubernetes/kubernetes/blob/master/staging/src/k8s.io/apiserver/pkg/endpoints/handlers/create.go).\n\n`CreateNamedResource` calls the `createHandler` function.",
+      "line": 207
+    },
+    {
+      "file": "pkg/endpoints/handlers/create.go",
+      "description": "Let's look at what `createHandler` does!",
+      "line": 51
+    },
+    {
+      "file": "pkg/endpoints/handlers/create.go",
+      "description": "First, the `name` and `namespace` for the resource are derived from the request.",
+      "line": 62,
+      "selection": {
+        "start": {
+          "line": 62,
+          "character": 1
+        },
+        "end": {
+          "line": 63,
+          "character": 1
+        }
+      }
+    },
+    {
+      "file": "pkg/endpoints/handlers/create.go",
+      "description": "Then the `NegotiatedSerializer` derives the media type (yaml, json, etc) from the request.",
+      "line": 82
+    },
+    {
+      "file": "pkg/endpoints/handlers/create.go",
+      "description": "The serializer is then used to create a decoder. The decoder is responsible for:\n- Serializing the body of the request to a golang type\n- Converting the golang object to the desired version\n- Defaulting the golang object with desired values",
+      "line": 95
+    },
+    {
+      "file": "pkg/endpoints/handlers/create.go",
+      "description": "`limtedReadBody` reads the request body using `ioutil.ReadAll(req.Body)`.",
+      "line": 97
+    },
+    {
+      "file": "pkg/endpoints/handlers/create.go",
+      "selection": {
+        "start": {
+          "line": 110,
+          "character": 1
+        },
+        "end": {
+          "line": 115,
+          "character": 92
+        }
+      },
+      "description": "Before we start decoding the object, we need to ensure that the options passed for the `Create` method (`CreateOptions`) are valid."
+    },
+    {
+      "file": "pkg/endpoints/handlers/create.go",
+      "selection": {
+        "start": {
+          "line": 119,
+          "character": 1
+        },
+        "end": {
+          "line": 120,
+          "character": 63
+        }
+      },
+      "description": "Next, we finally decode the object to a golang object.\n\nUnder the hood, this method also calls `scheme.Convert()` for conversion and `scheme.Default()` for defaulting.\n"
+    },
+    {
+      "file": "pkg/endpoints/handlers/create.go",
+      "selection": {
+        "start": {
+          "line": 172,
+          "character": 1
+        },
+        "end": {
+          "line": 176,
+          "character": 5
+        }
+      },
+      "description": "After serialization, conversion and defaulting, mutating webhooks are applied."
+    },
+    {
+      "file": "pkg/endpoints/handlers/create.go",
+      "description": "After mutating webhooks, validating webhooks are applied.\n",
+      "line": 179
+    },
+    {
+      "file": "pkg/endpoints/handlers/create.go",
+      "selection": {
+        "start": {
+          "line": 152,
+          "character": 2
+        },
+        "end": {
+          "line": 160,
+          "character": 4
+        }
+      },
+      "description": "The `requestFunc` calls `validatingAdmission.Validate()` which applies validating webhooks and then creates the object."
+    }
+  ],
+  "ref": "master"
+}
