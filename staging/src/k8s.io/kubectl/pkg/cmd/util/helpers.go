@@ -461,6 +461,10 @@ func AddChunkSizeFlag(cmd *cobra.Command, value *int64) {
 		"Return large lists in chunks rather than all at once. Pass 0 to disable. This flag is beta and may change in the future.")
 }
 
+func AddSubresourceFlags(cmd *cobra.Command, subresource *string, usage string, allowedSubresources ...string) {
+	cmd.Flags().StringVar(subresource, "subresource", "", fmt.Sprintf("%s Must be one of %v. This flag is alpha and may change in the future.", usage, allowedSubresources))
+}
+
 type ValidateOptions struct {
 	EnableValidation bool
 }
